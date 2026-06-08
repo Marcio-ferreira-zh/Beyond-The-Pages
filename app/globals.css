@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #1a0c05;
+  --color-foreground: #ffffff;
+  
+  --color-gold: #c5a059;
+  --color-gold-light: #e5c07b;
+  --color-gold-dark: #a88444;
+  --color-gold-accent: #f3d498;
+  
+  --color-pagebg: #1a0c05;
+  --color-cardbg: #2a1810;
+  
+  --font-serif: var(--font-serif), "Alegreya", Georgia, serif;
+  --font-sans: var(--font-sans), "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* Base styling overrides */
+body {
+  font-family: var(--font-sans);
+  background-color: #1a0c05;
+  background-image: radial-gradient(circle at center, #2a1810 0%, #1a0c05 100%);
+  background-attachment: fixed;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom premium scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a0c05;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a1810;
+  border: 1px solid rgba(197, 160, 89, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(197, 160, 89, 0.4);
+}
+
+/* Custom glassmorphic utilities */
+.gold-glass {
+  background: rgba(42, 24, 16, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(197, 160, 89, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.gold-glass-hover:hover {
+  border-color: rgba(197, 160, 89, 0.35);
+  box-shadow: 0 8px 32px 0 rgba(197, 160, 89, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Custom scrollbars inside pages */
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(197, 160, 89, 0.3) rgba(26, 12, 5, 0.5);
+}
+
+/* Gold glow text effect */
+.text-gold-glow {
+  text-shadow: 0 0 10px rgba(197, 160, 89, 0.4);
+}
+
+.border-gold-glow {
+  box-shadow: 0 0 15px rgba(197, 160, 89, 0.25);
+}
+
+/* Custom font styles for serif */
+.font-serif-alegreya {
+  font-family: var(--font-serif);
+}
+
+/* Pulse animation for active highlights */
+@keyframes goldPulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(197, 160, 89, 0.2);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 20px rgba(197, 160, 89, 0.5);
+  }
+}
+
+.pulse-gold {
+  animation: goldPulse 3s infinite;
+}
