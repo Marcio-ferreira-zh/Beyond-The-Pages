@@ -27,6 +27,24 @@ export interface Recommendation {
   createdAt: string;
 }
 
+export interface PergaminhoRecommendation {
+  userName: string;
+  role: string;
+  content: string;
+}
+
+export interface PergaminhoWork {
+  id: string;
+  title: string;
+  author: string;
+  materialType: "Livro" | "Novel" | "Light Novel";
+  genre: string;
+  classification: string;
+  rating: number;
+  synopsis: string;
+  recommendations: PergaminhoRecommendation[];
+}
+
 export const INITIAL_BRIEFINGS: Briefing[] = [
   {
     id: "1",
@@ -163,6 +181,309 @@ export const INITIAL_RECOMMENDATIONS: Recommendation[] = [
     ratingGiven: 4,
     createdAt: "2026-06-08T09:30:00Z"
   }
+];
+
+export const PERGAMINHOS: PergaminhoWork[] = [
+  {
+    id: "p1",
+    title: "O Jardim das Lâminas Azuis",
+    author: "Helena Sato",
+    materialType: "Novel",
+    genre: "Fantasia Política",
+    classification: "Classe A — intriga nobre com magia ritual",
+    rating: 4.6,
+    synopsis: "Uma herdeira sem trono precisa vencer duelos diplomáticos em uma capital onde flores guardam memórias de assassinatos.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A ambientação tem perfume de corte decadente e cada capítulo termina com uma revelação elegante." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "Recomendo para quem gosta de personagens que vencem mais pela estratégia do que pela força." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "A protagonista é afiada, vulnerável e fácil de acompanhar mesmo em meio à política complexa." },
+    ],
+  },
+  {
+    id: "p2",
+    title: "Crônicas do Farol Submerso",
+    author: "Mateus Valença",
+    materialType: "Livro",
+    genre: "Mistério Oceânico",
+    classification: "Classe B+ — suspense atmosférico e melancólico",
+    rating: 4.3,
+    synopsis: "Um investigador retorna à ilha natal para decifrar mensagens emitidas por um farol que desapareceu no fundo do mar.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A escrita é lenta no melhor sentido: cada pista parece molhada de sal e culpa." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "Boa escolha para quem quer um mistério mais emocional do que policialesco." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "O final fictício entrega respostas sem quebrar a aura sobrenatural da obra." },
+    ],
+  },
+  {
+    id: "p3",
+    title: "Imperador dos Sete Eclipse",
+    author: "Akira Montel",
+    materialType: "Light Novel",
+    genre: "Isekai / Estratégia",
+    classification: "Classe S — progressão imperial de alto impacto",
+    rating: 4.8,
+    synopsis: "Depois de renascer como conselheiro de um império em ruínas, um tático tenta impedir sete eclipses profetizados.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "O ritmo de evolução é viciante e a escala cresce sem perder o tabuleiro político." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "As batalhas são vencidas no planejamento, então agrada muito fãs de estratégia." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "Os coadjuvantes têm objetivos próprios, o que deixa o império vivo." },
+    ],
+  },
+  {
+    id: "p4",
+    title: "Manual de Sobrevivência para Bruxas Urbanas",
+    author: "Camila Orvalho",
+    materialType: "Livro",
+    genre: "Fantasia Urbana",
+    classification: "Classe A- — magia cotidiana com humor ácido",
+    rating: 4.1,
+    synopsis: "Uma bruxa recém-formada administra uma lavanderia encantada enquanto investiga maldições presas em roupas esquecidas.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "É leve sem ser raso, com magia muito criativa nos objetos comuns." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "Os casos episódicos ajudam a leitura fluir e revelam bem a protagonista." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "Perfeito para alternar entre obras densas e algo confortável." },
+    ],
+  },
+  {
+    id: "p5",
+    title: "A Biblioteca no Fim do Relâmpago",
+    author: "Rafael Kuroda",
+    materialType: "Novel",
+    genre: "Aventura Arcana",
+    classification: "Classe S- — jornada mágica e bibliotecas impossíveis",
+    rating: 4.7,
+    synopsis: "Um aprendiz encontra uma biblioteca que só abre durante tempestades capazes de reescrever eventos do passado.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A ideia central é encantadora e combina muito com leitores que amam livros dentro de livros." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "Há boas escolhas morais quando mexer no passado cobra preços pessoais." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "O protagonista aprende sem virar invencível rápido demais, o que melhora a jornada." },
+    ],
+  },
+  {
+    id: "p6",
+    title: "Neon para Deuses Mortos",
+    author: "Bianca Voss",
+    materialType: "Livro",
+    genre: "Cyberpunk Mitológico",
+    classification: "Classe A — noir futurista com panteões quebrados",
+    rating: 4.4,
+    synopsis: "Em uma megacidade governada por corporações divinas, uma hacker negocia com deuses falidos para salvar seu bairro.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "Mistura mitologia e neon com personalidade visual muito forte." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "A crítica social fictícia é direta, mas funciona porque os conflitos são pessoais." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "A protagonista tem voz sarcástica e um ótimo senso de sobrevivência." },
+    ],
+  },
+  {
+    id: "p7",
+    title: "O Monge que Colecionava Dragões",
+    author: "João Mirel",
+    materialType: "Livro",
+    genre: "Fantasia Filosófica",
+    classification: "Classe B — contemplativo e poético",
+    rating: 4.0,
+    synopsis: "Um monge viaja por montanhas espirituais catalogando dragões que representam medos humanos.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A leitura pede calma, mas recompensa com imagens belíssimas." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "É menos ação e mais reflexão, então funciona para quem gosta de alegorias." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "Os dragões são memoráveis porque cada um tem uma metáfora clara." },
+    ],
+  },
+  {
+    id: "p8",
+    title: "Rainha de Vidro e Ferrugem",
+    author: "Marina Locke",
+    materialType: "Novel",
+    genre: "Steampunk",
+    classification: "Classe A+ — rebelião mecânica e drama real",
+    rating: 4.5,
+    synopsis: "Uma rainha mecânica descobre que sua memória foi montada por inimigos e lidera uma rebelião contra seus criadores.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "O conflito de identidade da protagonista sustenta muito bem o espetáculo steampunk." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "Tem reviravoltas políticas fortes e aliados com lealdades duvidosas." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "A estética de vidro, engrenagens e ferrugem cria cenas fáceis de imaginar." },
+    ],
+  },
+  {
+    id: "p9",
+    title: "Café para Necromantes Iniciantes",
+    author: "Igor Pimenta",
+    materialType: "Light Novel",
+    genre: "Comédia Sobrenatural",
+    classification: "Classe B+ — humor macabro e acolhedor",
+    rating: 4.2,
+    synopsis: "Um necromante atrapalhado abre uma cafeteria para espíritos e sem querer vira conselheiro dos mortos da cidade.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "É divertido, carismático e usa o sobrenatural para falar de despedidas." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "Os capítulos curtos tornam a obra ótima para leitura casual." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "O elenco de fantasmas é o grande charme, cada cliente traz uma história." },
+    ],
+  },
+  {
+    id: "p10",
+    title: "A Última Estação de Marte",
+    author: "Sofia Brandão",
+    materialType: "Livro",
+    genre: "Ficção Científica",
+    classification: "Classe A — sobrevivência espacial intimista",
+    rating: 4.4,
+    synopsis: "A equipe de uma estação marciana abandonada precisa decidir se espera resgate ou inicia uma travessia quase impossível.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A tensão vem tanto da ciência quanto das relações desgastadas da tripulação." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "Recomendo para fãs de ficção científica humana, com tecnologia servindo ao drama." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "A sensação de isolamento marciano é muito bem construída." },
+    ],
+  },
+  {
+    id: "p11",
+    title: "Caçadores de Auroras Negras",
+    author: "Tainá Borges",
+    materialType: "Novel",
+    genre: "Ação / Fantasia",
+    classification: "Classe S — combates elementais e equipe carismática",
+    rating: 4.7,
+    synopsis: "Mercenários mágicos rastreiam auroras que transformam regiões inteiras em labirintos vivos.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A equipe tem química e cada missão revela uma regra nova do mundo." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "As lutas são claras, rápidas e cheias de criatividade elemental." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "Boa porta de entrada para quem quer aventura sem perder emoção." },
+    ],
+  },
+  {
+    id: "p12",
+    title: "Sussurros da Casa Cartógrafa",
+    author: "Otávia Reis",
+    materialType: "Livro",
+    genre: "Gótico / Mistério",
+    classification: "Classe A- — mansão viva e segredos familiares",
+    rating: 4.3,
+    synopsis: "Uma cartógrafa herda uma casa cujos corredores mudam conforme mentiras antigas são reveladas.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A casa é praticamente uma personagem, cheia de mapas impossíveis." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "O mistério familiar é bem dosado e mantém curiosidade constante." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "A atmosfera gótica é elegante sem depender de sustos fáceis." },
+    ],
+  },
+  {
+    id: "p13",
+    title: "Meu Rival é o Rei Demônio",
+    author: "Kenji Avelar",
+    materialType: "Light Novel",
+    genre: "Romance / Isekai",
+    classification: "Classe B+ — rivalidade romântica e fantasia leve",
+    rating: 4.1,
+    synopsis: "Uma heroína convocada para derrotar o Rei Demônio descobre que ele é o único disposto a negociar a paz.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A dinâmica de rivais funciona porque ambos têm razões compreensíveis." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "É divertido ver diplomacia substituir a batalha final esperada." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "A química é fofa e o tom leve combina com leitura de conforto." },
+    ],
+  },
+  {
+    id: "p14",
+    title: "O Arquivo das Estrelas Queimadas",
+    author: "Davi Elian",
+    materialType: "Livro",
+    genre: "Space Opera",
+    classification: "Classe A+ — império galáctico e memória cósmica",
+    rating: 4.6,
+    synopsis: "Uma historiadora espacial descobre arquivos sobre estrelas apagadas artificialmente para esconder um genocídio imperial.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A escala é enorme, mas a investigação histórica mantém tudo ancorado." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "Tem conspiração, frota imperial e dilemas éticos interessantes." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "A protagonista é movida por memória e justiça, não por glória." },
+    ],
+  },
+  {
+    id: "p15",
+    title: "Pétalas para um Samurai Fantasma",
+    author: "Yumi Andrade",
+    materialType: "Novel",
+    genre: "Fantasia Histórica",
+    classification: "Classe B — honra, luto e duelos espirituais",
+    rating: 4.2,
+    synopsis: "Uma florista conversa com o fantasma de um samurai que protege sua vila de espíritos vingativos.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A delicadeza das cenas contrasta bem com os duelos espirituais." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "O passado do samurai dá força ao mistério central." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "É uma obra fictícia ótima para quem procura fantasia mais emocional." },
+    ],
+  },
+  {
+    id: "p16",
+    title: "A Garota que Vendia Mundos",
+    author: "Priscila Nox",
+    materialType: "Livro",
+    genre: "Fantasia Surreal",
+    classification: "Classe S- — imaginação alta e tom onírico",
+    rating: 4.5,
+    synopsis: "Uma jovem mercadora comercializa pequenos mundos engarrafados enquanto foge de colecionadores celestiais.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "Cada mundo engarrafado parece render um conto próprio, com muita inventividade." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "A perseguição dá movimento a uma premissa bem poética." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "Recomendo para leitores que gostam de fantasia estranha e bela." },
+    ],
+  },
+  {
+    id: "p17",
+    title: "Sistema Solar de Bolso",
+    author: "Caio Nakamura",
+    materialType: "Light Novel",
+    genre: "Aventura Científica",
+    classification: "Classe B+ — humor, ciência e exploração",
+    rating: 4.0,
+    synopsis: "Um estudante recebe um sistema solar miniaturizado e precisa impedir que planetas temperamentais destruam seu quarto.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A premissa é absurda de um jeito muito divertido." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "O humor visual funciona bem e há pequenas ideias científicas interessantes." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "É leve, criativo e tem cara de série confortável." },
+    ],
+  },
+  {
+    id: "p18",
+    title: "Oráculo em Chamas",
+    author: "Isadora Vale",
+    materialType: "Livro",
+    genre: "Fantasia Épica",
+    classification: "Classe A — profecia trágica e guerra sagrada",
+    rating: 4.4,
+    synopsis: "Uma sacerdotisa que prevê desastres precisa convencer reinos inimigos a acreditar em uma visão que a condena.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A profecia tem peso dramático real porque exige sacrifícios pessoais." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "As alianças entre reinos dão complexidade sem travar a narrativa." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "A protagonista é forte justamente por ter medo." },
+    ],
+  },
+  {
+    id: "p19",
+    title: "O Clube dos Vilões Redimidos",
+    author: "Larissa Fen",
+    materialType: "Novel",
+    genre: "Comédia / Fantasia",
+    classification: "Classe B — found family de ex-antagonistas",
+    rating: 4.1,
+    synopsis: "Ex-vilões formam um clube de apoio para evitar recaídas enquanto salvam a cidade de heróis narcisistas.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A graça vem de personagens tentando ser melhores sem perder personalidade." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "A inversão herói/vilão é simples, mas muito funcional." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "É uma obra fictícia simpática, ideal para quem ama found family." },
+    ],
+  },
+  {
+    id: "p20",
+    title: "Coração de Obsidiana Lunar",
+    author: "Mirella Frost",
+    materialType: "Light Novel",
+    genre: "Romantasia",
+    classification: "Classe A- — magia lunar e pacto perigoso",
+    rating: 4.3,
+    synopsis: "Uma curandeira faz pacto com um príncipe lunar amaldiçoado e descobre que seu coração guarda uma guerra antiga.",
+    recommendations: [
+      { userName: "Lia Codex", role: "Arquivista de Fantasia", content: "A romantasia equilibra bem mistério, magia e tensão emocional." },
+      { userName: "Theo Margem", role: "Leitor de Intrigas", content: "O pacto cria conflitos bons porque nenhum dos dois pode confiar totalmente." },
+      { userName: "Nina Folhas", role: "Curadora de Novels", content: "A estética lunar combina com a promessa de uma leitura dramática e envolvente." },
+    ],
+  },
 ];
 
 export const GENRES = [

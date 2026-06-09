@@ -1,26 +1,33 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { BookOpen, Key, Mail, AlertCircle } from "lucide-react";
 import { Dashboard } from "../components/dashboard";
 
+const getSessionSnapshot = () => {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return localStorage.getItem("btp_session") ?? "";
+};
+
+const subscribeToSession = (onStoreChange: () => void) => {
+  window.addEventListener("btp_session_change", onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+
+  return () => {
+    window.removeEventListener("btp_session_change", onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+};
+
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const session = useSyncExternalStore(subscribeToSession, getSessionSnapshot, () => "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [mounted, setMounted] = useState(false);
-
-  // Avoid hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-    const session = localStorage.getItem("btp_session");
-    if (session) {
-      setIsLoggedIn(true);
-      setEmail(session);
-    }
-  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,27 +38,19 @@ export default function Home() {
     
     // Simple mock authentication (any non-empty input is accepted)
     localStorage.setItem("btp_session", email);
-    setIsLoggedIn(true);
+    window.dispatchEvent(new Event("btp_session_change"));
     setError("");
   };
 
   const handleLogout = () => {
     localStorage.removeItem("btp_session");
-    setIsLoggedIn(false);
+    window.dispatchEvent(new Event("btp_session_change"));
     setEmail("");
     setPassword("");
   };
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen bg-[#1a0c05] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold"></div>
-      </div>
-    );
-  }
-
-  if (isLoggedIn) {
-    return <Dashboard onLogout={handleLogout} userEmail={email} />;
+  if (session) {
+    return <Dashboard onLogout={handleLogout} userEmail={session} />;
   }
 
   return (
@@ -66,7 +65,7 @@ export default function Home() {
             width={128}
             height={128}
             className="object-contain p-4 transition-transform duration-500 group-hover:scale-105"
-            src="/logo_app.png"
+            src="/app_icon.png"
             onError={(e) => {
               // If image fails, fallback to rendering the icon
               e.currentTarget.style.display = "none";

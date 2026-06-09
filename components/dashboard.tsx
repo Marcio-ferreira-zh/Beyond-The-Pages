@@ -1,1066 +1,585 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { 
-  Search, 
-  BookOpen, 
-  Plus, 
-  Filter, 
-  MessageSquare, 
-  Star, 
-  Clock, 
-  BookMarked, 
-  User, 
-  Layers, 
-  Globe, 
-  Compass, 
-  LogOut, 
-  Bookmark, 
-  Quote, 
-  ChevronRight, 
+import Image from "next/image";
+import React, { useMemo, useState } from "react";
+import {
+  ArrowLeft,
+  BookMarked,
+  BookOpen,
+  ChevronRight,
+  Home,
+  LogOut,
+  MessageSquare,
+  Pencil,
+  Plus,
+  Quote,
+  Search,
   Sparkles,
-  RefreshCw
+  Star,
+  Trash2,
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./ui/card";
+import {
+  Briefing,
+  INITIAL_BRIEFINGS,
+  INITIAL_RECOMMENDATIONS,
+  PERGAMINHOS,
+  PergaminhoWork,
+  Recommendation,
+} from "../data/mockData";
 import { Button } from "./ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { Modal } from "./ui/modal";
-import { 
-  Briefing, 
-  Recommendation, 
-  INITIAL_BRIEFINGS, 
-  INITIAL_RECOMMENDATIONS,
-  GENRES,
-  PROTAGONIST_PERSONALITIES,
-  WORLD_TYPES
-} from "../data/mockData";
 
 interface DashboardProps {
   onLogout: () => void;
   userEmail: string;
 }
 
+type ActiveTab = "home" | "library" | "pergaminhos" | "recommendations";
+
+const NAV_ITEMS: { id: ActiveTab; label: string }[] = [
+  { id: "home", label: "Home" },
+  { id: "library", label: "Biblioteca" },
+  { id: "pergaminhos", label: "Pergaminhos" },
+  { id: "recommendations", label: "Recomendações" },
+];
+
+const loadStoredCollection = <T,>(key: string, fallback: T[]) => {
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+
+  const storedValue = localStorage.getItem(key);
+  if (storedValue) {
+    return JSON.parse(storedValue) as T[];
+  }
+
+  localStorage.setItem(key, JSON.stringify(fallback));
+  return fallback;
+};
+
 export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => {
-  // State
-  const [briefings, setBriefings] = useState<Briefing[]>([]);
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [activeTab, setActiveTab] = useState<"library" | "recommendations">("library");
-  
-  // Search & Filter state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState("");
-  const [selectedPersonality, setSelectedPersonality] = useState("");
-  const [selectedWorldType, setSelectedWorldType] = useState("");
-  const [selectedMaterialType, setSelectedMaterialType] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
-  
-  // Modals state
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("home");
+  const [briefings] = useState<Briefing[]>(() => loadStoredCollection("btp_briefings", INITIAL_BRIEFINGS));
+  const [recommendations, setRecommendations] = useState<Recommendation[]>(() =>
+    loadStoredCollection("btp_recommendations", INITIAL_RECOMMENDATIONS)
+  );
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [pergaminhoSearch, setPergaminhoSearch] = useState("");
   const [selectedBriefing, setSelectedBriefing] = useState<Briefing | null>(null);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isRecommendOpen, setIsRecommendOpen] = useState(false);
-
-  // Form states
-  // New Briefing form
-  const [newTitle, setNewTitle] = useState("");
-  const [newAuthor, setNewAuthor] = useState("");
-  const [newMaterialType, setNewMaterialType] = useState<Briefing["materialType"]>("Livro");
-  const [newStatus, setNewStatus] = useState<Briefing["status"]>("Lendo");
-  const [newSummary, setNewSummary] = useState("");
-  const [newCharacters, setNewCharacters] = useState("");
-  const [newThemes, setNewThemes] = useState("");
-  const [newQuotes, setNewQuotes] = useState("");
-  const [newPersonalNotes, setNewPersonalNotes] = useState("");
-  const [newRating, setNewRating] = useState(5);
-  const [newGenre, setNewGenre] = useState("");
-  const [newPersonality, setNewPersonality] = useState("");
-  const [newWorldType, setNewWorldType] = useState("");
-
-  // New Recommendation form
+  const [selectedPergaminho, setSelectedPergaminho] = useState<PergaminhoWork | null>(null);
+  const [isRecommendationModalOpen, setIsRecommendationModalOpen] = useState(false);
+  const [editingRecommendationId, setEditingRecommendationId] = useState<string | null>(null);
   const [recBriefingId, setRecBriefingId] = useState("");
   const [recAuthorName, setRecAuthorName] = useState("");
   const [recContent, setRecContent] = useState("");
   const [recRating, setRecRating] = useState(5);
 
-  // Hydration safety: Load from localStorage on mount
-  useEffect(() => {
-    const storedBriefings = localStorage.getItem("btp_briefings");
-    const storedRecommendations = localStorage.getItem("btp_recommendations");
+  const filteredBriefings = useMemo(() => {
+    const query = librarySearch.toLowerCase();
 
-    if (storedBriefings) {
-      setBriefings(JSON.parse(storedBriefings));
-    } else {
-      setBriefings(INITIAL_BRIEFINGS);
-      localStorage.setItem("btp_briefings", JSON.stringify(INITIAL_BRIEFINGS));
-    }
+    return briefings.filter((briefing) =>
+      [briefing.title, briefing.author, briefing.summary, briefing.genre, briefing.materialType]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [briefings, librarySearch]);
 
-    if (storedRecommendations) {
-      setRecommendations(JSON.parse(storedRecommendations));
-    } else {
-      setRecommendations(INITIAL_RECOMMENDATIONS);
-      localStorage.setItem("btp_recommendations", JSON.stringify(INITIAL_RECOMMENDATIONS));
-    }
-  }, []);
+  const filteredPergaminhos = useMemo(() => {
+    const query = pergaminhoSearch.toLowerCase();
 
-  // Sync state helpers
-  const saveBriefings = (updated: Briefing[]) => {
-    setBriefings(updated);
-    localStorage.setItem("btp_briefings", JSON.stringify(updated));
+    return PERGAMINHOS.filter((work) =>
+      [work.title, work.author, work.genre, work.materialType, work.classification]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [pergaminhoSearch]);
+
+  const saveRecommendations = (updatedRecommendations: Recommendation[]) => {
+    setRecommendations(updatedRecommendations);
+    localStorage.setItem("btp_recommendations", JSON.stringify(updatedRecommendations));
   };
 
-  const saveRecommendations = (updated: Recommendation[]) => {
-    setRecommendations(updated);
-    localStorage.setItem("btp_recommendations", JSON.stringify(updated));
-  };
-
-  // Filter handlers
-  const handleResetFilters = () => {
-    setSelectedGenre("");
-    setSelectedPersonality("");
-    setSelectedWorldType("");
-    setSelectedMaterialType("");
-    setSelectedStatus("");
-    setSearchQuery("");
-  };
-
-  // Filter calculation
-  const filteredBriefings = briefings.filter((b) => {
-    const matchesSearch = 
-      b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.summary.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesGenre = selectedGenre ? b.genre === selectedGenre : true;
-    const matchesPersonality = selectedPersonality ? b.protagonistPersonality === selectedPersonality : true;
-    const matchesWorld = selectedWorldType ? b.worldType === selectedWorldType : true;
-    const matchesMaterial = selectedMaterialType ? b.materialType === selectedMaterialType : true;
-    const matchesStatus = selectedStatus ? b.status === selectedStatus : true;
-
-    return matchesSearch && matchesGenre && matchesPersonality && matchesWorld && matchesMaterial && matchesStatus;
-  });
-
-  // Action: Create Briefing
-  const handleCreateBriefing = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle || !newAuthor || !newGenre || !newPersonality || !newWorldType) {
-      alert("Por favor, preencha os campos obrigatórios (Título, Autor, Gênero, Personalidade e Tipo de Mundo).");
-      return;
+  const navigateToTab = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    if (tab !== "pergaminhos") {
+      setSelectedPergaminho(null);
     }
-
-    const quotesArray = newQuotes
-      ? newQuotes.split("\n").filter((q) => q.trim() !== "")
-      : [];
-
-    const newBriefingItem: Briefing = {
-      id: Date.now().toString(),
-      title: newTitle,
-      author: newAuthor,
-      materialType: newMaterialType,
-      status: newStatus,
-      summary: newSummary,
-      characters: newCharacters,
-      themes: newThemes,
-      quotes: quotesArray,
-      personalNotes: newPersonalNotes,
-      rating: newRating,
-      genre: newGenre,
-      protagonistPersonality: newPersonality,
-      worldType: newWorldType,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const updated = [newBriefingItem, ...briefings];
-    saveBriefings(updated);
-    setIsCreateOpen(false);
-
-    // Reset form states
-    setNewTitle("");
-    setNewAuthor("");
-    setNewMaterialType("Livro");
-    setNewStatus("Lendo");
-    setNewSummary("");
-    setNewCharacters("");
-    setNewThemes("");
-    setNewQuotes("");
-    setNewPersonalNotes("");
-    setNewRating(5);
-    setNewGenre("");
-    setNewPersonality("");
-    setNewWorldType("");
   };
 
-  // Action: Create Recommendation
-  const handleCreateRecommendation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!recBriefingId || !recAuthorName || !recContent) {
-      alert("Por favor, preencha todos os campos da recomendação.");
-      return;
-    }
-
-    const linkedBriefing = briefings.find((b) => b.id === recBriefingId);
-    if (!linkedBriefing) return;
-
-    const newRecItem: Recommendation = {
-      id: Date.now().toString(),
-      briefingId: recBriefingId,
-      briefingTitle: linkedBriefing.title,
-      authorName: recAuthorName,
-      content: recContent,
-      ratingGiven: recRating,
-      createdAt: new Date().toISOString(),
-    };
-
-    const updated = [newRecItem, ...recommendations];
-    saveRecommendations(updated);
-    setIsRecommendOpen(false);
-
-    // Reset form states
+  const resetRecommendationForm = () => {
     setRecBriefingId("");
     setRecAuthorName("");
     setRecContent("");
     setRecRating(5);
+    setEditingRecommendationId(null);
   };
 
-  // Action: Delete Briefing
-  const handleDeleteBriefing = (id: string) => {
-    if (confirm("Tem certeza de que deseja excluir este briefing?")) {
-      const updated = briefings.filter((b) => b.id !== id);
-      saveBriefings(updated);
-      setIsDetailOpen(false);
-      setSelectedBriefing(null);
+  const openNewRecommendationModal = (briefingId = "") => {
+    resetRecommendationForm();
+    setRecBriefingId(briefingId);
+    setIsRecommendationModalOpen(true);
+  };
+
+  const openEditRecommendationModal = (recommendation: Recommendation) => {
+    setEditingRecommendationId(recommendation.id);
+    setRecBriefingId(recommendation.briefingId);
+    setRecAuthorName(recommendation.authorName);
+    setRecContent(recommendation.content);
+    setRecRating(recommendation.ratingGiven);
+    setIsRecommendationModalOpen(true);
+  };
+
+  const handleRecommendationSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const linkedBriefing = briefings.find((briefing) => briefing.id === recBriefingId);
+    if (!linkedBriefing || !recAuthorName.trim() || !recContent.trim()) {
+      alert("Preencha obra, nome e recomendação antes de publicar.");
+      return;
+    }
+
+    if (editingRecommendationId) {
+      const updatedRecommendations = recommendations.map((recommendation) =>
+        recommendation.id === editingRecommendationId
+          ? {
+              ...recommendation,
+              briefingId: linkedBriefing.id,
+              briefingTitle: linkedBriefing.title,
+              authorName: recAuthorName.trim(),
+              content: recContent.trim(),
+              ratingGiven: recRating,
+            }
+          : recommendation
+      );
+
+      saveRecommendations(updatedRecommendations);
+    } else {
+      const newRecommendation: Recommendation = {
+        id: Date.now().toString(),
+        briefingId: linkedBriefing.id,
+        briefingTitle: linkedBriefing.title,
+        authorName: recAuthorName.trim(),
+        content: recContent.trim(),
+        ratingGiven: recRating,
+        createdAt: new Date().toISOString(),
+      };
+
+      saveRecommendations([newRecommendation, ...recommendations]);
+    }
+
+    resetRecommendationForm();
+    setIsRecommendationModalOpen(false);
+  };
+
+  const deleteRecommendation = (recommendationId: string) => {
+    if (confirm("Tem certeza de que deseja excluir esta recomendação?")) {
+      saveRecommendations(recommendations.filter((recommendation) => recommendation.id !== recommendationId));
     }
   };
 
-  // Open Recommendation form pre-filled with specific briefing
-  const handleOpenRecommendForBriefing = (briefing: Briefing) => {
-    setRecBriefingId(briefing.id);
-    setIsDetailOpen(false);
-    setIsRecommendOpen(true);
-  };
+  const renderStars = (rating: number, size = 14) => (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <Star
+          key={index}
+          size={size}
+          className={index < Math.round(rating) ? "text-gold fill-gold" : "text-white/15"}
+        />
+      ))}
+    </div>
+  );
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      {/* Top Banner Header */}
-      <header className="border-b border-gold/15 bg-[#1e0f07]/90 sticky top-0 z-40 backdrop-blur-md px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full border border-gold/40 flex items-center justify-center bg-[#2a1810] shadow-[0_0_10px_rgba(197,160,89,0.2)]">
-            <BookOpen size={20} className="text-gold" />
-          </div>
-          <div>
-            <h1 className="text-gold font-serif text-2xl font-bold tracking-wide">
-              Beyond The Pages
-            </h1>
-            <p className="text-white/40 text-[10px] tracking-widest uppercase -mt-0.5">
-              Quando a história sai do papel
+  const renderTabButton = (item: { id: ActiveTab; label: string }) => (
+    <button
+      key={item.id}
+      onClick={() => navigateToTab(item.id)}
+      className={`rounded px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all ${
+        activeTab === item.id
+          ? "bg-gradient-to-r from-gold to-gold-light text-[#1a0c05]"
+          : "text-white/60 hover:text-white"
+      }`}
+    >
+      {item.label}
+    </button>
+  );
+
+  const renderHome = () => (
+    <div className="flex flex-col gap-8">
+      <section className="gold-glass relative overflow-hidden rounded-2xl border border-gold/20 p-8 md:p-10">
+        <div className="absolute right-8 top-8 hidden h-40 w-40 rounded-full bg-gold/10 blur-3xl md:block" />
+        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="max-w-2xl">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-gold/25 bg-[#2a1810]/70 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold-light">
+              <Home size={12} /> Aba Home
+            </span>
+            <h2 className="font-serif text-4xl font-bold italic text-gold-light md:text-5xl">
+              Bem-vindo ao Beyond The Pages
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-white/65">
+              Organize leituras, publique recomendações e explore pergaminhos com novels e livros fictícios selecionados para descoberta rápida.
             </p>
           </div>
-        </div>
 
-        {/* Header Center Nav Tabs */}
-        <div className="hidden md:flex bg-[#1a0c05] p-1 rounded-md border border-white/5">
-          <button
-            onClick={() => setActiveTab("library")}
-            className={`px-4 py-1.5 rounded text-xs tracking-wider uppercase font-semibold transition-all ${
-              activeTab === "library"
-                ? "bg-gradient-to-r from-gold to-gold-light text-[#1a0c05]"
-                : "text-white/60 hover:text-white"
-            }`}
-          >
-            Biblioteca
-          </button>
-          <button
-            onClick={() => setActiveTab("recommendations")}
-            className={`px-4 py-1.5 rounded text-xs tracking-wider uppercase font-semibold transition-all ${
-              activeTab === "recommendations"
-                ? "bg-gradient-to-r from-gold to-gold-light text-[#1a0c05]"
-                : "text-white/60 hover:text-white"
-            }`}
-          >
-            Recomendações
-          </button>
-        </div>
-
-        {/* User Info & Actions */}
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 bg-[#2a1810]/40 px-3 py-1.5 rounded border border-white/5 text-xs text-white/70">
-            <User size={14} className="text-gold-light" />
-            <span className="truncate max-w-[150px]">{userEmail}</span>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={() => navigateToTab("pergaminhos")}>
+              <BookMarked size={16} /> Explorar Pergaminhos
+            </Button>
+            <Button variant="secondary" onClick={() => navigateToTab("recommendations")}>
+              <MessageSquare size={16} /> Ver Recomendações
+            </Button>
           </div>
-          <button
-            onClick={onLogout}
-            className="text-white/40 hover:text-red-400 p-2 rounded transition-colors hover:bg-white/5"
-            title="Sair da Biblioteca"
-          >
-            <LogOut size={18} />
-          </button>
         </div>
-      </header>
+      </section>
 
-      {/* Mobile Tab Selectors */}
-      <div className="md:hidden flex border-b border-white/5 bg-[#1a0c05]/60 p-2">
-        <button
-          onClick={() => setActiveTab("library")}
-          className={`flex-1 text-center py-2.5 rounded text-xs uppercase font-semibold tracking-wider transition-all ${
-            activeTab === "library"
-              ? "bg-[#2a1810] text-gold-light border-b-2 border-gold"
-              : "text-white/40"
-          }`}
-        >
-          Biblioteca
-        </button>
-        <button
-          onClick={() => setActiveTab("recommendations")}
-          className={`flex-1 text-center py-2.5 rounded text-xs uppercase font-semibold tracking-wider transition-all ${
-            activeTab === "recommendations"
-              ? "bg-[#2a1810] text-gold-light border-b-2 border-gold"
-              : "text-white/40"
-          }`}
-        >
-          Recomendações
-        </button>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {[
+          { label: "Obras na biblioteca", value: briefings.length, icon: BookOpen },
+          { label: "Pergaminhos aleatórios", value: PERGAMINHOS.length, icon: BookMarked },
+          { label: "Recomendações feitas", value: recommendations.length, icon: Sparkles },
+        ].map((stat) => {
+          const Icon = stat.icon;
+
+          return (
+            <Card key={stat.label}>
+              <CardContent className="flex items-center justify-between p-5">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-white/35">{stat.label}</p>
+                  <strong className="font-serif text-3xl text-gold-light">{stat.value}</strong>
+                </div>
+                <Icon className="text-gold/70" size={28} />
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderLibrary = () => (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col justify-between gap-4 border-b border-white/5 pb-4 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="flex items-center gap-2 font-serif text-2xl font-bold italic text-gold-light">
+            <BookOpen size={20} /> Biblioteca
+          </h2>
+          <p className="text-xs text-white/45">Briefings salvos no seu codex pessoal.</p>
+        </div>
+        <div className="relative w-full sm:max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+          <input
+            type="text"
+            placeholder="Pesquisar por título, autor ou gênero..."
+            value={librarySearch}
+            onChange={(event) => setLibrarySearch(event.target.value)}
+            className="w-full rounded border border-white/10 bg-[#2a1810]/40 py-3 pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/20 focus:border-gold"
+          />
+        </div>
       </div>
 
-      {/* Main Workspace Layout */}
-      <main className="flex-1 flex flex-col lg:flex-row">
-        
-        {/* Left Sidebar - Filters Panel (Only for Library Tab) */}
-        {activeTab === "library" && (
-          <aside className="w-full lg:w-80 border-r lg:border-b-0 border-b border-gold/10 bg-[#1e0f07]/30 p-6 flex flex-col gap-6 shrink-0 lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto custom-scroll">
-            <div className="flex items-center justify-between">
-              <h2 className="font-serif text-gold-light text-lg italic font-bold flex items-center gap-2">
-                <Filter size={16} /> Filtros de Manuscrito
-              </h2>
-              <button
-                onClick={handleResetFilters}
-                className="text-[10px] text-white/30 hover:text-gold uppercase tracking-wider flex items-center gap-1 transition-colors"
-              >
-                <RefreshCw size={10} /> Limpar
-              </button>
-            </div>
-
-            {/* Filters Controls */}
-            <div className="flex flex-col gap-4">
-              
-              {/* Genre Filter */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-white/40 uppercase tracking-widest flex items-center gap-1">
-                  <Compass size={12} className="text-gold/60" /> Gênero Literário
-                </label>
-                <select
-                  value={selectedGenre}
-                  onChange={(e) => setSelectedGenre(e.target.value)}
-                  className="w-full bg-[#2a1810] border border-white/10 rounded p-2.5 text-xs text-white focus:border-gold outline-none transition-colors"
-                >
-                  <option value="">Todos os Gêneros</option>
-                  {GENRES.map((g) => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {filteredBriefings.map((briefing) => (
+          <Card
+            key={briefing.id}
+            hoverEffect
+            className="flex cursor-pointer flex-col justify-between"
+            onClick={() => setSelectedBriefing(briefing)}
+          >
+            <CardHeader>
+              <CardDescription>{briefing.materialType}</CardDescription>
+              <CardTitle className="line-clamp-1">{briefing.title}</CardTitle>
+              <span className="text-xs italic text-white/60">por {briefing.author}</span>
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col gap-4">
+              <p className="line-clamp-4 text-xs leading-relaxed text-white/70">{briefing.summary}</p>
+              <div className="mt-auto flex flex-col gap-2 border-t border-white/5 pt-3 text-[10px]">
+                <span className="text-gold-light">{briefing.genre}</span>
+                <span className="text-white/40">{briefing.protagonistPersonality}</span>
               </div>
+            </CardContent>
+            <CardFooter className="py-3">
+              {renderStars(briefing.rating)}
+              <span className="text-[10px] text-white/30">{briefing.status}</span>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
 
-              {/* Protagonist Personality Filter */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-white/40 uppercase tracking-widest flex items-center gap-1">
-                  <User size={12} className="text-gold/60" /> Personalidade do Protagonista
-                </label>
-                <select
-                  value={selectedPersonality}
-                  onChange={(e) => setSelectedPersonality(e.target.value)}
-                  className="w-full bg-[#2a1810] border border-white/10 rounded p-2.5 text-xs text-white focus:border-gold outline-none transition-colors"
-                >
-                  <option value="">Qualquer Personalidade</option>
-                  {PROTAGONIST_PERSONALITIES.map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-              </div>
+  const renderPergaminhos = () => {
+    if (selectedPergaminho) {
+      return (
+        <div className="flex flex-col gap-6">
+          <Button variant="ghost" size="sm" className="w-fit" onClick={() => setSelectedPergaminho(null)}>
+            <ArrowLeft size={14} /> Voltar para Pergaminhos
+          </Button>
 
-              {/* World Type Filter */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-white/40 uppercase tracking-widest flex items-center gap-1">
-                  <Globe size={12} className="text-gold/60" /> Tipo de Mundo / Universo
-                </label>
-                <select
-                  value={selectedWorldType}
-                  onChange={(e) => setSelectedWorldType(e.target.value)}
-                  className="w-full bg-[#2a1810] border border-white/10 rounded p-2.5 text-xs text-white focus:border-gold outline-none transition-colors"
-                >
-                  <option value="">Qualquer Mundo</option>
-                  {WORLD_TYPES.map((w) => (
-                    <option key={w} value={w}>{w}</option>
-                  ))}
-                </select>
-              </div>
-
-              <hr className="border-white/5 my-2" />
-
-              {/* Material Type */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-white/40 uppercase tracking-widest flex items-center gap-1">
-                  <Layers size={12} className="text-gold/60" /> Tipo de Material
-                </label>
-                <select
-                  value={selectedMaterialType}
-                  onChange={(e) => setSelectedMaterialType(e.target.value)}
-                  className="w-full bg-[#2a1810] border border-white/10 rounded p-2.5 text-xs text-white focus:border-gold outline-none transition-colors"
-                >
-                  <option value="">Todos os Formatos</option>
-                  <option value="Livro">Livro</option>
-                  <option value="Mangá">Mangá</option>
-                  <option value="HQ">HQ</option>
-                  <option value="Artigo">Artigo</option>
-                  <option value="Light Novel">Light Novel</option>
-                  <option value="Texto Livre">Texto Livre</option>
-                </select>
-              </div>
-
-              {/* Status */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs text-white/40 uppercase tracking-widest flex items-center gap-1">
-                  <BookMarked size={12} className="text-gold/60" /> Status de Leitura
-                </label>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full bg-[#2a1810] border border-white/10 rounded p-2.5 text-xs text-white focus:border-gold outline-none transition-colors"
-                >
-                  <option value="">Qualquer Status</option>
-                  <option value="Lendo">Lendo</option>
-                  <option value="Concluído">Concluído</option>
-                  <option value="Pausado">Pausado</option>
-                  <option value="Abandonado">Abandonado</option>
-                </select>
-              </div>
-
-            </div>
-
-            {/* Quick stats */}
-            <div className="mt-auto pt-6 border-t border-white/5 hidden lg:block">
-              <div className="bg-[#2a1810]/30 p-4 rounded border border-white/5 text-xs text-white/45 flex flex-col gap-2">
-                <div className="flex justify-between">
-                  <span>Total de Briefings:</span>
-                  <span className="text-gold font-bold">{briefings.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Filtrados:</span>
-                  <span className="text-gold-light">{filteredBriefings.length}</span>
-                </div>
-              </div>
-            </div>
-          </aside>
-        )}
-
-        {/* Center Workspace Content Area */}
-        <section className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto custom-scroll lg:max-h-[calc(100vh-80px)]">
-          
-          {activeTab === "library" ? (
-            /* TAB 1: LIBRARY */
-            <>
-              {/* Search and Action Bar */}
-              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                
-                {/* Search Input wrapper */}
-                <div className="relative w-full sm:max-w-md">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-white/20">
-                    <Search size={16} />
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Pesquise por título, autor, resumos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-[#2a1810]/40 border border-white/10 pl-10 pr-4 py-3 rounded text-sm text-white focus:border-gold outline-none transition-colors placeholder:text-white/20"
-                  />
-                </div>
-
-                {/* Add new Briefing Button */}
-                <Button 
-                  onClick={() => setIsCreateOpen(true)}
-                  className="w-full sm:w-auto"
-                >
-                  <Plus size={16} /> Novo Briefing
-                </Button>
-              </div>
-
-              {/* Filtering badges indicators */}
-              {(selectedGenre || selectedPersonality || selectedWorldType || selectedMaterialType || selectedStatus || searchQuery) && (
-                <div className="flex flex-wrap gap-2 items-center bg-[#2a1810]/20 p-3 rounded border border-white/5">
-                  <span className="text-[10px] text-white/40 uppercase tracking-widest font-bold mr-1">Filtros Ativos:</span>
-                  {selectedGenre && <span className="bg-[#c5a059]/10 text-gold-light border border-gold/20 text-[10px] px-2 py-0.5 rounded-full font-serif italic">{selectedGenre}</span>}
-                  {selectedPersonality && <span className="bg-[#c5a059]/10 text-gold-light border border-gold/20 text-[10px] px-2 py-0.5 rounded-full font-serif italic">{selectedPersonality}</span>}
-                  {selectedWorldType && <span className="bg-[#c5a059]/10 text-gold-light border border-gold/20 text-[10px] px-2 py-0.5 rounded-full font-serif italic">{selectedWorldType}</span>}
-                  {selectedMaterialType && <span className="bg-[#c5a059]/10 text-gold-light border border-gold/20 text-[10px] px-2 py-0.5 rounded-full font-serif italic">{selectedMaterialType}</span>}
-                  {selectedStatus && <span className="bg-[#c5a059]/10 text-gold-light border border-gold/20 text-[10px] px-2 py-0.5 rounded-full font-serif italic">{selectedStatus}</span>}
-                  {searchQuery && <span className="bg-[#c5a059]/10 text-gold-light border border-gold/20 text-[10px] px-2 py-0.5 rounded-full font-serif italic">Busca: "{searchQuery}"</span>}
-                  <button 
-                    onClick={handleResetFilters}
-                    className="text-[9px] text-gold-light hover:underline uppercase ml-auto tracking-wider font-bold"
-                  >
-                    Remover Todos
-                  </button>
-                </div>
-              )}
-
-              {/* Briefings Grid */}
-              {filteredBriefings.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredBriefings.map((briefing) => (
-                    <Card
-                      key={briefing.id}
-                      hoverEffect
-                      className="cursor-pointer flex flex-col justify-between"
-                      onClick={() => {
-                        setSelectedBriefing(briefing);
-                        setIsDetailOpen(true);
-                      }}
-                    >
-                      <CardHeader className="relative">
-                        {/* Status Ribbon Badge */}
-                        <div className="absolute top-4 right-4">
-                          <span className={`text-[9px] px-2.5 py-1 rounded font-semibold uppercase tracking-wider ${
-                            briefing.status === "Lendo" ? "bg-amber-500/10 text-amber-300 border border-amber-500/20" :
-                            briefing.status === "Concluído" ? "bg-green-500/10 text-green-300 border border-green-500/20" :
-                            briefing.status === "Pausado" ? "bg-blue-500/10 text-blue-300 border border-blue-500/20" :
-                            "bg-red-500/10 text-red-300 border border-red-500/20"
-                          }`}>
-                            {briefing.status}
-                          </span>
-                        </div>
-                        
-                        <CardDescription>{briefing.materialType}</CardDescription>
-                        <CardTitle className="pr-16 line-clamp-1">{briefing.title}</CardTitle>
-                        <span className="text-white/60 text-xs italic">por {briefing.author}</span>
-                      </CardHeader>
-
-                      <CardContent className="flex-1 flex flex-col gap-4">
-                        {/* Summary preview */}
-                        <p className="text-white/70 text-xs line-clamp-3 leading-relaxed">
-                          {briefing.summary}
-                        </p>
-
-                        {/* Rich features badges (Genre, Personality, World) */}
-                        <div className="mt-auto pt-3 border-t border-white/5 flex flex-col gap-2">
-                          <div className="flex items-center gap-1.5 text-[10px]">
-                            <span className="text-white/35 font-bold uppercase tracking-wider w-16">Gênero:</span>
-                            <span className="text-gold-light italic font-serif truncate">{briefing.genre}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[10px]">
-                            <span className="text-white/35 font-bold uppercase tracking-wider w-16">Protagonista:</span>
-                            <span className="text-gold-light italic font-serif truncate">{briefing.protagonistPersonality}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[10px]">
-                            <span className="text-white/35 font-bold uppercase tracking-wider w-16">Mundo:</span>
-                            <span className="text-gold-light italic font-serif truncate">{briefing.worldType}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-
-                      <CardFooter className="bg-[#2a1810]/20 justify-between py-3">
-                        <div className="flex items-center gap-0.5">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star
-                              key={i}
-                              size={12}
-                              className={i < briefing.rating ? "text-gold fill-gold" : "text-white/10"}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-[10px] text-white/30 flex items-center gap-1">
-                          <Clock size={10} />
-                          {new Date(briefing.updatedAt).toLocaleDateString("pt-BR")}
-                        </span>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                /* Empty State */
-                <div className="flex-1 flex flex-col items-center justify-center py-20 bg-[#2a1810]/10 border border-dashed border-white/5 rounded-xl">
-                  <Bookmark size={48} className="text-white/15 mb-4 animate-pulse" />
-                  <h3 className="font-serif text-lg text-white/60 italic mb-1">Nenhum manuscrito encontrado</h3>
-                  <p className="text-xs text-white/30 max-w-sm text-center mb-6">
-                    Ajuste seus filtros de busca ou crie um novo briefing de leitura para começar a catalogar.
-                  </p>
-                  <Button variant="secondary" size="sm" onClick={handleResetFilters}>
-                    Limpar Todos os Filtros
-                  </Button>
-                </div>
-              )}
-            </>
-          ) : (
-            /* TAB 2: RECOMMENDATIONS */
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col sm:flex-row gap-4 items-center justify-between border-b border-white/5 pb-4">
+          <Card>
+            <CardHeader className="border-b border-white/5">
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                 <div>
-                  <h2 className="font-serif text-gold-light text-2xl italic font-bold flex items-center gap-2">
-                    <Sparkles size={20} /> Recomendações do Codex
-                  </h2>
-                  <p className="text-white/45 text-xs">
-                    Compartilhe suas análises aprofundadas sobre as obras catalogadas.
-                  </p>
+                  <CardDescription>{selectedPergaminho.materialType} • {selectedPergaminho.genre}</CardDescription>
+                  <CardTitle className="text-3xl italic text-gold-light">{selectedPergaminho.title}</CardTitle>
+                  <p className="text-sm italic text-white/60">por {selectedPergaminho.author}</p>
                 </div>
-
-                <Button onClick={() => setIsRecommendOpen(true)}>
-                  <MessageSquare size={16} /> Recomendar Obra
-                </Button>
+                <div className="rounded border border-gold/20 bg-[#1a0c05]/70 p-3 text-right">
+                  <p className="text-[10px] uppercase tracking-widest text-white/35">Classificação fictícia</p>
+                  <strong className="font-serif text-sm italic text-gold-light">{selectedPergaminho.classification}</strong>
+                  <div className="mt-2 flex justify-end">{renderStars(selectedPergaminho.rating, 16)}</div>
+                </div>
               </div>
-
-              {/* Recommendations grid */}
-              {recommendations.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {recommendations.map((rec) => {
-                    const linkedBriefing = briefings.find((b) => b.id === rec.briefingId);
-                    return (
-                      <Card key={rec.id} className="flex flex-col justify-between">
-                        <CardHeader className="bg-[#2a1810]/20 pb-3 flex flex-row items-start justify-between gap-4">
-                          <div>
-                            <span className="text-[10px] text-gold/60 uppercase tracking-widest font-bold">
-                              Recomendação de Obra
-                            </span>
-                            <CardTitle className="text-lg text-white font-serif italic">
-                              {rec.briefingTitle}
-                            </CardTitle>
-                            {linkedBriefing && (
-                              <span className="text-[10px] text-white/40 italic">
-                                por {linkedBriefing.author} • {linkedBriefing.genre}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-0.5 bg-[#1a0c05] px-2 py-1 rounded border border-white/10">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                size={10}
-                                className={i < rec.ratingGiven ? "text-gold fill-gold" : "text-white/20"}
-                              />
-                            ))}
-                          </div>
-                        </CardHeader>
-
-                        <CardContent className="pt-4 flex-1">
-                          <div className="relative pl-6">
-                            <span className="absolute top-0 left-0 text-gold-dark/40">
-                              <Quote size={18} className="rotate-180" />
-                            </span>
-                            <p className="text-white/85 text-xs italic leading-relaxed font-serif">
-                              {rec.content}
-                            </p>
-                          </div>
-                        </CardContent>
-
-                        <CardFooter className="py-3 justify-between text-[10px] text-white/30">
-                          <span>
-                            Escrito por: <strong className="text-gold-light">{rec.authorName}</strong>
-                          </span>
-                          <span>
-                            {new Date(rec.createdAt).toLocaleDateString("pt-BR")}
-                          </span>
-                        </CardFooter>
-                      </Card>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 bg-[#2a1810]/10 border border-dashed border-white/5 rounded-xl">
-                  <MessageSquare size={48} className="text-white/15 mb-4" />
-                  <h3 className="font-serif text-lg text-white/60 italic mb-1">Nenhuma recomendação escrita</h3>
-                  <p className="text-xs text-white/30 max-w-sm text-center mb-6">
-                    Seja o primeiro a escrever uma recomendação para as obras catalogadas na biblioteca!
-                  </p>
-                  <Button variant="secondary" size="sm" onClick={() => setIsRecommendOpen(true)}>
-                    Escrever Recomendação
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
-        </section>
-      </main>
-
-      {/* FOOTER */}
-      <footer className="border-t border-white/5 bg-[#1a0c05] py-4 text-center text-[10px] text-white/20 uppercase tracking-widest mt-auto">
-        © MMXXVI BEYOND THE PAGES • Quando a história sai do papel
-      </footer>
-
-      {/* ------------------------------------------------------------- */}
-      {/* MODAL 1: BRIEFING DETAIL */}
-      {/* ------------------------------------------------------------- */}
-      <Modal
-        isOpen={isDetailOpen}
-        onClose={() => setIsDetailOpen(false)}
-        title="Codex Manuscrito"
-        maxWidth="lg"
-      >
-        {selectedBriefing && (
-          <div className="flex flex-col gap-6">
-            
-            {/* Header info */}
-            <div className="flex justify-between items-start border-b border-white/5 pb-4">
+            </CardHeader>
+            <CardContent className="flex flex-col gap-6 pt-5">
+              <p className="text-sm leading-relaxed text-white/75">{selectedPergaminho.synopsis}</p>
               <div>
-                <span className="text-[10px] text-gold/60 uppercase tracking-widest font-bold">
-                  {selectedBriefing.materialType}
-                </span>
-                <h2 className="text-gold-light font-serif text-3xl font-bold italic">
-                  {selectedBriefing.title}
-                </h2>
-                <p className="text-white/60 text-sm italic">
-                  por {selectedBriefing.author}
-                </p>
-              </div>
-
-              <div className="flex flex-col items-end gap-1.5">
-                <span className={`text-[10px] px-2.5 py-1 rounded font-bold uppercase tracking-wider ${
-                  selectedBriefing.status === "Lendo" ? "bg-amber-500/10 text-amber-300 border border-amber-500/20" :
-                  selectedBriefing.status === "Concluído" ? "bg-green-500/10 text-green-300 border border-green-500/20" :
-                  selectedBriefing.status === "Pausado" ? "bg-blue-500/10 text-blue-300 border border-blue-500/20" :
-                  "bg-red-500/10 text-red-300 border border-red-500/20"
-                }`}>
-                  {selectedBriefing.status}
-                </span>
-                <div className="flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star
-                      key={i}
-                      size={14}
-                      className={i < selectedBriefing.rating ? "text-gold fill-gold" : "text-white/10"}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Rich details cards (Genre, Personality, World) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-[#2a1810]/40 p-4 rounded border border-gold/10 flex flex-col gap-1">
-                <span className="text-[9px] text-white/30 uppercase tracking-widest font-bold">Gênero</span>
-                <span className="text-gold-light font-serif italic text-sm">{selectedBriefing.genre}</span>
-              </div>
-              <div className="bg-[#2a1810]/40 p-4 rounded border border-gold/10 flex flex-col gap-1">
-                <span className="text-[9px] text-white/30 uppercase tracking-widest font-bold">Protagonista</span>
-                <span className="text-gold-light font-serif italic text-sm">{selectedBriefing.protagonistPersonality}</span>
-              </div>
-              <div className="bg-[#2a1810]/40 p-4 rounded border border-gold/10 flex flex-col gap-1">
-                <span className="text-[9px] text-white/30 uppercase tracking-widest font-bold">Universo</span>
-                <span className="text-gold-light font-serif italic text-sm">{selectedBriefing.worldType}</span>
-              </div>
-            </div>
-
-            {/* Content: Summary */}
-            <div className="flex flex-col gap-2">
-              <h4 className="text-gold font-serif italic text-base border-b border-white/5 pb-1">Resumo da Obra</h4>
-              <p className="text-white/80 text-xs leading-relaxed font-serif text-justify">
-                {selectedBriefing.summary || "Sem resumo registrado."}
-              </p>
-            </div>
-
-            {/* Content: Characters & Themes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-2">
-                <h4 className="text-gold font-serif italic text-base border-b border-white/5 pb-1">Personagens Principais</h4>
-                <p className="text-white/80 text-xs leading-relaxed whitespace-pre-line font-serif">
-                  {selectedBriefing.characters || "Nenhum personagem registrado."}
-                </p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <h4 className="text-gold font-serif italic text-base border-b border-white/5 pb-1">Temas Centrais</h4>
-                <p className="text-white/80 text-xs leading-relaxed whitespace-pre-line font-serif">
-                  {selectedBriefing.themes || "Nenhum tema registrado."}
-                </p>
-              </div>
-            </div>
-
-            {/* Content: Quotes */}
-            {selectedBriefing.quotes && selectedBriefing.quotes.length > 0 && (
-              <div className="flex flex-col gap-3">
-                <h4 className="text-gold font-serif italic text-base border-b border-white/5 pb-1">Citações Memoráveis</h4>
-                <div className="flex flex-col gap-3">
-                  {selectedBriefing.quotes.map((quote, idx) => (
-                    <div key={idx} className="relative pl-8 pr-4 py-3 bg-[#2a1810]/20 rounded border-l-2 border-gold italic text-white/90 text-xs font-serif leading-relaxed">
-                      <span className="absolute top-2 left-2 text-gold-dark/30">
-                        <Quote size={14} className="rotate-180" />
-                      </span>
-                      "{quote}"
+                <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-bold italic text-gold-light">
+                  <MessageSquare size={18} /> Recomendações fictícias da obra
+                </h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {selectedPergaminho.recommendations.map((recommendation) => (
+                    <div key={recommendation.userName} className="rounded-lg border border-white/5 bg-[#2a1810]/35 p-4">
+                      <p className="font-serif text-base font-bold italic text-gold-light">{recommendation.userName}</p>
+                      <p className="mb-3 text-[10px] uppercase tracking-widest text-white/35">{recommendation.role}</p>
+                      <p className="text-xs leading-relaxed text-white/75">{recommendation.content}</p>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
 
-            {/* Content: Personal Notes */}
-            <div className="flex flex-col gap-2">
-              <h4 className="text-gold font-serif italic text-base border-b border-white/5 pb-1">Notas Pessoais</h4>
-              <p className="text-white/80 text-xs leading-relaxed font-serif text-justify bg-[#2a1810]/15 p-4 rounded border border-white/5">
-                {selectedBriefing.personalNotes || "Sem anotações registradas."}
-              </p>
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col justify-between gap-4 border-b border-white/5 pb-4 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="flex items-center gap-2 font-serif text-2xl font-bold italic text-gold-light">
+              <BookMarked size={20} /> Pergaminhos
+            </h2>
+            <p className="text-xs text-white/45">Lista de 20 novels e livros aleatórios para explorar.</p>
+          </div>
+          <div className="relative w-full sm:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+            <input
+              type="text"
+              placeholder="Pesquisar obras, autores, tipos ou gêneros..."
+              value={pergaminhoSearch}
+              onChange={(event) => setPergaminhoSearch(event.target.value)}
+              className="w-full rounded border border-white/10 bg-[#2a1810]/40 py-3 pl-10 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/20 focus:border-gold"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          {filteredPergaminhos.map((work) => (
+            <Card
+              key={work.id}
+              hoverEffect
+              className="flex cursor-pointer flex-col justify-between"
+              onClick={() => setSelectedPergaminho(work)}
+            >
+              <CardHeader>
+                <CardDescription>{work.materialType} • {work.genre}</CardDescription>
+                <CardTitle className="line-clamp-2">{work.title}</CardTitle>
+                <span className="text-xs italic text-white/60">por {work.author}</span>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col gap-4">
+                <p className="line-clamp-4 text-xs leading-relaxed text-white/70">{work.synopsis}</p>
+                <span className="mt-auto rounded border border-gold/15 bg-gold/5 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-gold-light">
+                  {work.classification}
+                </span>
+              </CardContent>
+              <CardFooter className="py-3">
+                {renderStars(work.rating)}
+                <span className="flex items-center gap-1 text-[10px] text-white/30">
+                  Abrir <ChevronRight size={12} />
+                </span>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderRecommendations = () => (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col justify-between gap-4 border-b border-white/5 pb-4 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="flex items-center gap-2 font-serif text-2xl font-bold italic text-gold-light">
+            <Sparkles size={20} /> Recomendações do Codex
+          </h2>
+          <p className="text-xs text-white/45">Altere ou exclua recomendações já publicadas.</p>
+        </div>
+        <Button onClick={() => openNewRecommendationModal()}>
+          <Plus size={16} /> Nova Recomendação
+        </Button>
+      </div>
+
+      {recommendations.length > 0 ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {recommendations.map((recommendation) => (
+            <Card key={recommendation.id} className="flex flex-col justify-between">
+              <CardHeader className="border-b border-white/5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <CardDescription>Recomendação de Obra</CardDescription>
+                    <CardTitle className="italic">{recommendation.briefingTitle}</CardTitle>
+                    <span className="text-[10px] text-white/40">
+                      Escrito por <strong className="text-gold-light">{recommendation.authorName}</strong>
+                    </span>
+                  </div>
+                  {renderStars(recommendation.ratingGiven, 12)}
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 pt-5">
+                <div className="relative pl-7">
+                  <Quote className="absolute left-0 top-0 rotate-180 text-gold-dark/40" size={18} />
+                  <p className="font-serif text-xs italic leading-relaxed text-white/85">{recommendation.content}</p>
+                </div>
+              </CardContent>
+              <CardFooter className="py-3">
+                <span className="text-[10px] text-white/30">
+                  {new Date(recommendation.createdAt).toLocaleDateString("pt-BR")}
+                </span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="secondary" onClick={() => openEditRecommendationModal(recommendation)}>
+                    <Pencil size={12} /> Alterar
+                  </Button>
+                  <Button size="sm" variant="danger" onClick={() => deleteRecommendation(recommendation.id)}>
+                    <Trash2 size={12} /> Excluir
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <MessageSquare size={44} className="text-white/15" />
+            <div>
+              <h3 className="font-serif text-lg italic text-white/70">Nenhuma recomendação escrita</h3>
+              <p className="text-xs text-white/35">Publique a primeira recomendação para uma obra da biblioteca.</p>
             </div>
+            <Button variant="secondary" onClick={() => openNewRecommendationModal()}>
+              Escrever Recomendação
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 
-            {/* Actions Footer */}
-            <div className="flex items-center justify-between pt-6 border-t border-white/5 mt-4">
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => handleDeleteBriefing(selectedBriefing.id)}
-              >
-                Excluir
-              </Button>
+  return (
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-gold/15 bg-[#1e0f07]/90 px-6 py-4 backdrop-blur-md">
+        <button className="flex items-center gap-3 text-left" onClick={() => navigateToTab("home")}>
+          <span className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-gold/40 bg-[#2a1810] shadow-[0_0_10px_rgba(197,160,89,0.2)]">
+            <Image src="/app_icon.png" alt="Ícone Beyond The Pages" fill sizes="48px" className="object-cover" priority />
+          </span>
+          <span>
+            <span className="block font-serif text-2xl font-bold tracking-wide text-gold">Beyond The Pages</span>
+            <span className="-mt-0.5 block text-[10px] uppercase tracking-widest text-white/40">
+              Quando a história sai do papel
+            </span>
+          </span>
+        </button>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleOpenRecommendForBriefing(selectedBriefing)}
-                >
-                  <MessageSquare size={14} /> Recomendar Obra
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => setIsDetailOpen(false)}
-                >
-                  Fechar
-                </Button>
+        <nav className="hidden rounded-md border border-white/5 bg-[#1a0c05] p-1 md:flex">
+          {NAV_ITEMS.map(renderTabButton)}
+        </nav>
+
+        <div className="flex items-center gap-4">
+          <span className="hidden text-xs text-white/40 lg:block">{userEmail}</span>
+          <Button variant="ghost" size="sm" onClick={onLogout}>
+            <LogOut size={14} /> Sair
+          </Button>
+        </div>
+      </header>
+
+      <nav className="grid grid-cols-4 gap-1 border-b border-white/5 bg-[#1a0c05]/80 p-2 md:hidden">
+        {NAV_ITEMS.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => navigateToTab(item.id)}
+            className={`rounded px-2 py-2 text-[10px] font-semibold uppercase tracking-wider transition-all ${
+              activeTab === item.id ? "bg-[#2a1810] text-gold-light" : "text-white/40"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
+      <main className="flex-1 p-6">
+        {activeTab === "home" && renderHome()}
+        {activeTab === "library" && renderLibrary()}
+        {activeTab === "pergaminhos" && renderPergaminhos()}
+        {activeTab === "recommendations" && renderRecommendations()}
+      </main>
+
+      <footer className="mt-auto border-t border-white/5 bg-[#1a0c05] py-4 text-center text-[10px] uppercase tracking-widest text-white/20">
+        © MMXXVI BEYOND THE PAGES • Quando a história sai do papel
+      </footer>
+
+      <Modal isOpen={selectedBriefing !== null} onClose={() => setSelectedBriefing(null)} title="Codex Manuscrito" maxWidth="lg">
+        {selectedBriefing && (
+          <div className="flex flex-col gap-6">
+            <div className="border-b border-white/5 pb-4">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gold/60">{selectedBriefing.materialType}</span>
+              <h2 className="font-serif text-3xl font-bold italic text-gold-light">{selectedBriefing.title}</h2>
+              <p className="text-sm italic text-white/60">por {selectedBriefing.author}</p>
+            </div>
+            <p className="text-sm leading-relaxed text-white/80">{selectedBriefing.summary}</p>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded border border-white/5 bg-[#2a1810]/20 p-4">
+                <h3 className="mb-2 font-serif text-base italic text-gold-light">Personagens</h3>
+                <p className="text-xs leading-relaxed text-white/70">{selectedBriefing.characters}</p>
+              </div>
+              <div className="rounded border border-white/5 bg-[#2a1810]/20 p-4">
+                <h3 className="mb-2 font-serif text-base italic text-gold-light">Temas</h3>
+                <p className="text-xs leading-relaxed text-white/70">{selectedBriefing.themes}</p>
               </div>
             </div>
-
+            <div className="flex justify-end gap-3 border-t border-white/5 pt-4">
+              <Button variant="secondary" onClick={() => openNewRecommendationModal(selectedBriefing.id)}>
+                <MessageSquare size={14} /> Recomendar Obra
+              </Button>
+              <Button onClick={() => setSelectedBriefing(null)}>Fechar</Button>
+            </div>
           </div>
         )}
       </Modal>
 
-      {/* ------------------------------------------------------------- */}
-      {/* MODAL 2: CREATE BRIEFING */}
-      {/* ------------------------------------------------------------- */}
       <Modal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        title="Registrar Novo Manuscrito"
-        maxWidth="lg"
-      >
-        <form onSubmit={handleCreateBriefing} className="flex flex-col gap-5">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Título da Obra *"
-              placeholder="Ex: O Senhor dos Anéis"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              required
-            />
-            <Input
-              label="Autor *"
-              placeholder="Ex: J.R.R. Tolkien"
-              value={newAuthor}
-              onChange={(e) => setNewAuthor(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-gold-light italic font-serif text-base tracking-wide">
-                Tipo de Material *
-              </label>
-              <select
-                value={newMaterialType}
-                onChange={(e) => setNewMaterialType(e.target.value as Briefing["materialType"])}
-                className="w-full bg-[#2a1810] border border-white/10 p-3.5 text-white rounded focus:border-gold outline-none transition-colors text-sm"
-              >
-                <option value="Livro">Livro</option>
-                <option value="Mangá">Mangá</option>
-                <option value="HQ">HQ</option>
-                <option value="Artigo">Artigo</option>
-                <option value="Light Novel">Light Novel</option>
-                <option value="Texto Livre">Texto Livre</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-gold-light italic font-serif text-base tracking-wide">
-                Status de Leitura *
-              </label>
-              <select
-                value={newStatus}
-                onChange={(e) => setNewStatus(e.target.value as Briefing["status"])}
-                className="w-full bg-[#2a1810] border border-white/10 p-3.5 text-white rounded focus:border-gold outline-none transition-colors text-sm"
-              >
-                <option value="Lendo">Lendo</option>
-                <option value="Concluído">Concluído</option>
-                <option value="Pausado">Pausado</option>
-                <option value="Abandonado">Abandonado</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Golden Filters Fields */}
-          <div className="bg-[#2a1810]/40 p-4 rounded border border-gold/15 flex flex-col gap-4">
-            <span className="text-[10px] text-gold uppercase tracking-widest font-bold border-b border-gold/10 pb-1">
-              Classificação & Categorias do Além-Páginas
-            </span>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Genre input/select */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-gold-light italic font-serif text-sm">Gênero *</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Fantasia, Ficção"
-                  value={newGenre}
-                  onChange={(e) => setNewGenre(e.target.value)}
-                  list="genres-list"
-                  className="w-full bg-[#1e0f07] border border-white/10 p-2 text-xs text-white rounded focus:border-gold outline-none"
-                  required
-                />
-                <datalist id="genres-list">
-                  {GENRES.map((g) => <option key={g} value={g} />)}
-                </datalist>
-              </div>
-
-              {/* Protagonist Personality */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-gold-light italic font-serif text-sm">Personalidade Protagonista *</label>
-                <input
-                  type="text"
-                  placeholder="Ex: INTJ, Otimista"
-                  value={newPersonality}
-                  onChange={(e) => setNewPersonality(e.target.value)}
-                  list="personalities-list"
-                  className="w-full bg-[#1e0f07] border border-white/10 p-2 text-xs text-white rounded focus:border-gold outline-none"
-                  required
-                />
-                <datalist id="personalities-list">
-                  {PROTAGONIST_PERSONALITIES.map((p) => <option key={p} value={p} />)}
-                </datalist>
-              </div>
-
-              {/* World Type */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-gold-light italic font-serif text-sm">Tipo de Mundo *</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Medieval, Isekai"
-                  value={newWorldType}
-                  onChange={(e) => setNewWorldType(e.target.value)}
-                  list="worlds-list"
-                  className="w-full bg-[#1e0f07] border border-white/10 p-2 text-xs text-white rounded focus:border-gold outline-none"
-                  required
-                />
-                <datalist id="worlds-list">
-                  {WORLD_TYPES.map((w) => <option key={w} value={w} />)}
-                </datalist>
-              </div>
-            </div>
-          </div>
-
-          <Input
-            label="Resumo da Obra"
-            placeholder="Breve resumo da premissa ou enredo..."
-            value={newSummary}
-            onChange={(e) => setNewSummary(e.target.value)}
-            isTextArea
-            rows={3}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Personagens Principais"
-              placeholder="Ex: Nome (Descrição)&#10;Nome2 (Descrição)"
-              value={newCharacters}
-              onChange={(e) => setNewCharacters(e.target.value)}
-              isTextArea
-              rows={3}
-            />
-            <Input
-              label="Temas Centrais"
-              placeholder="Ex: Amizade, Sobrevivência, Traição (um por linha)..."
-              value={newThemes}
-              onChange={(e) => setNewThemes(e.target.value)}
-              isTextArea
-              rows={3}
-            />
-          </div>
-
-          <Input
-            label="Citações Marcantes (uma por linha)"
-            placeholder="Ex: Penso, logo existo.&#10;A verdade vos libertará."
-            value={newQuotes}
-            onChange={(e) => setNewQuotes(e.target.value)}
-            isTextArea
-            rows={2}
-          />
-
-          <Input
-            label="Notas Pessoais & Insights"
-            placeholder="O que você achou? Qual sua lição aprendida?"
-            value={newPersonalNotes}
-            onChange={(e) => setNewPersonalNotes(e.target.value)}
-            isTextArea
-            rows={3}
-          />
-
-          <div className="flex items-center gap-4 bg-[#2a1810]/40 p-4 rounded border border-white/5 justify-between">
-            <span className="text-gold-light italic font-serif text-base">Avaliação Pessoal:</span>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((stars) => (
-                <button
-                  type="button"
-                  key={stars}
-                  onClick={() => setNewRating(stars)}
-                  className="focus:outline-none transition-transform hover:scale-125"
-                >
-                  <Star
-                    size={24}
-                    className={`${
-                      stars <= newRating
-                        ? "text-gold fill-gold"
-                        : "text-white/20"
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setIsCreateOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit">
-              Gravar no Codex
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* ------------------------------------------------------------- */}
-      {/* MODAL 3: CREATE RECOMMENDATION */}
-      {/* ------------------------------------------------------------- */}
-      <Modal
-        isOpen={isRecommendOpen}
-        onClose={() => setIsRecommendOpen(false)}
-        title="Escrever Recomendação"
+        isOpen={isRecommendationModalOpen}
+        onClose={() => {
+          setIsRecommendationModalOpen(false);
+          resetRecommendationForm();
+        }}
+        title={editingRecommendationId ? "Alterar Recomendação" : "Escrever Recomendação"}
         maxWidth="md"
       >
-        <form onSubmit={handleCreateRecommendation} className="flex flex-col gap-5">
-          
+        <form onSubmit={handleRecommendationSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
-            <label className="text-gold-light italic font-serif text-base tracking-wide">
-              Selecione a Obra *
-            </label>
+            <label className="font-serif text-base italic tracking-wide text-gold-light">Selecione a Obra *</label>
             <select
               value={recBriefingId}
-              onChange={(e) => setRecBriefingId(e.target.value)}
-              className="w-full bg-[#2a1810] border border-white/10 p-3.5 text-white rounded focus:border-gold outline-none transition-colors text-sm"
+              onChange={(event) => setRecBriefingId(event.target.value)}
+              className="w-full rounded border border-white/10 bg-[#2a1810] p-3.5 text-sm text-white outline-none transition-colors focus:border-gold"
               required
             >
-              <option value="">-- Escolha um briefing --</option>
-              {briefings.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.title} ({b.author})
+              <option value="">-- Escolha uma obra --</option>
+              {briefings.map((briefing) => (
+                <option key={briefing.id} value={briefing.id}>
+                  {briefing.title} ({briefing.author})
                 </option>
               ))}
             </select>
@@ -1070,58 +589,51 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
             label="Seu Nome / Apelido *"
             placeholder="Ex: Bibliotecário de Alexandria"
             value={recAuthorName}
-            onChange={(e) => setRecAuthorName(e.target.value)}
+            onChange={(event) => setRecAuthorName(event.target.value)}
             required
           />
 
           <Input
-            label="Sua Recomendação (Por que ler esta obra?) *"
-            placeholder="Escreva seus argumentos, o que o cativou e por que outras pessoas deveriam ler..."
+            label="Sua Recomendação *"
+            placeholder="Escreva por que outras pessoas deveriam ler esta obra..."
             value={recContent}
-            onChange={(e) => setRecContent(e.target.value)}
+            onChange={(event) => setRecContent(event.target.value)}
             isTextArea
             rows={5}
             required
           />
 
-          <div className="flex items-center gap-4 bg-[#2a1810]/40 p-4 rounded border border-white/5 justify-between">
-            <span className="text-gold-light italic font-serif text-base">Nota de Recomendação:</span>
+          <div className="flex items-center justify-between gap-4 rounded border border-white/5 bg-[#2a1810]/40 p-4">
+            <span className="font-serif text-base italic text-gold-light">Nota de Recomendação:</span>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((stars) => (
                 <button
                   type="button"
                   key={stars}
                   onClick={() => setRecRating(stars)}
-                  className="focus:outline-none transition-transform hover:scale-125"
+                  className="transition-transform hover:scale-125 focus:outline-none"
                 >
-                  <Star
-                    size={20}
-                    className={`${
-                      stars <= recRating
-                        ? "text-gold fill-gold"
-                        : "text-white/20"
-                    }`}
-                  />
+                  <Star size={20} className={stars <= recRating ? "text-gold fill-gold" : "text-white/20"} />
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+          <div className="flex justify-end gap-3 border-t border-white/5 pt-4">
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setIsRecommendOpen(false)}
+              onClick={() => {
+                setIsRecommendationModalOpen(false);
+                resetRecommendationForm();
+              }}
             >
               Cancelar
             </Button>
-            <Button type="submit">
-              Publicar Recomendação
-            </Button>
+            <Button type="submit">{editingRecommendationId ? "Salvar Alterações" : "Publicar Recomendação"}</Button>
           </div>
         </form>
       </Modal>
-
     </div>
   );
 };
