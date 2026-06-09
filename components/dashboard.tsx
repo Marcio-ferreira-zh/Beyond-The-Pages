@@ -607,7 +607,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
                 >
                   {normalizeStatus(briefing.status)}
                 </span>
-                <span className="text-[11px] text-gold-light">{briefing.rating.toFixed(1)}</span>
+                <span className="text-[11px] text-gold-light">{(briefing.rating ?? 0).toFixed(1)}</span>
               </div>
             </CardContent>
             <CardFooter className="!grid grid-cols-2 !items-stretch !justify-normal gap-2 border-t border-white/5 py-3">
@@ -619,7 +619,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
                   openBriefingProfile(briefing);
                 }}
               >
-                <BookOpen size={12} /> Biblioteca
+                <BookOpen size={12} /> Perfil
               </Button>
               <Button
                 size="sm"
@@ -742,7 +742,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
               <CardFooter className="flex-col items-stretch gap-2 border-t border-white/5 py-3">
                 <div className="flex items-center justify-between">
                   {renderStars(work.rating)}
-                  <span className="text-[10px] text-white/35">{work.rating.toFixed(1)}</span>
+                  <span className="text-[10px] text-white/35">{(work.rating ?? 0).toFixed(1)}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
