@@ -2,8 +2,8 @@ export interface Briefing {
   id: string;
   title: string;
   author: string;
-  materialType: "Livro" | "Mangá" | "HQ" | "Artigo" | "Light Novel" | "Texto Livre";
-  status: "Lendo" | "Concluído" | "Pausado" | "Abandonado";
+  materialType: "Livro" | "Mangá" | "HQ" | "Artigo" | "Light Novel" | "Texto Livre" | "Novel";
+  status: "Lendo" | "Lido" | "Dropado";
   summary: string;
   characters: string; // Personagens importantes e suas descrições
   themes: string; // Temas centrais
@@ -51,7 +51,7 @@ export const INITIAL_BRIEFINGS: Briefing[] = [
     title: "Dom Casmurro",
     author: "Machado de Assis",
     materialType: "Livro",
-    status: "Concluído",
+    status: "Lido",
     summary: "A obra narra a história de Bento Santiago, o Bentinho, apelidado de Dom Casmurro, que relembra sua vida desde a infância na Rua de Matacavalos até a velhice. O foco central é a sua relação obsessiva com Capitu e as suspeitas de traição com seu melhor amigo, Escobar.",
     characters: "Bento Santiago (narrador ciumento e inseguro), Capitu (olhos de ressaca, enigmática e decidida), Escobar (amigo leal e prático), Dona Glória (mãe possessiva).",
     themes: "Ciúme patológico, ambiguidade da verdade, memória seletiva, sociedade imperial brasileira.",
@@ -93,7 +93,7 @@ export const INITIAL_BRIEFINGS: Briefing[] = [
     title: "Duna",
     author: "Frank Herbert",
     materialType: "Livro",
-    status: "Concluído",
+    status: "Lido",
     summary: "Situado em um império intergaláctico feudal distante, Duna conta a história do jovem Paul Atreides, cuja família aceita o controle do planeta deserto Arrakis, a única fonte da substância mais valiosa do universo: o mélange ('especiaria'). O livro aborda intrigas políticas, religião e ecologia.",
     characters: "Paul Atreides (Messias relutante, herdeiro da Casa Atreides), Jessica Atreides (Bene Gesserit e mãe de Paul), Barão Harkonnen (antagonista cruel e manipulador), Stilgar (líder Fremen).",
     themes: "Messianismo perigoso, controle ecológico, feudalismo espacial, evolução humana sob substâncias psicodélicas.",
@@ -114,7 +114,7 @@ export const INITIAL_BRIEFINGS: Briefing[] = [
     title: "Sandman: Prelúdios e Noturnos",
     author: "Neil Gaiman",
     materialType: "HQ",
-    status: "Concluído",
+    status: "Lido",
     summary: "Após passar mais de sete décadas aprisionado por uma ordem ocultista britânica, Morfeu, o Rei dos Sonhos, escapa. Ele deve agora recuperar suas três ferramentas de poder (a algibeira de areia, o elmo e o rubi) para restaurar a ordem em seu reino decadente, o Sonhar.",
     characters: "Morfeu / Sonho (Senhor do Sonhar, orgulhoso e estoico), Morte (irmã mais velha e empática de Sonho), Lúcifer Estrela da Manhã (Rei do Inferno).",
     themes: "Responsabilidade do dever, a natureza dos mitos e histórias, a imortalidade, reabilitação.",
@@ -135,7 +135,7 @@ export const INITIAL_BRIEFINGS: Briefing[] = [
     title: "Overlord",
     author: "Kugane Maruyama",
     materialType: "Light Novel",
-    status: "Pausado",
+    status: "Dropado",
     summary: "No ano de 2138, o jogo de realidade virtual DMMO-RPG Yggdrasil está prestes a ser desativado. O jogador veterano Momonga decide permanecer logado até o último segundo. Em vez de ser desconectado, ele se vê transportado para um novo mundo com sua guilda de monstros NPC reais e leais, assumindo a identidade do mago morto-vivo Ainz Ooal Gown.",
     characters: "Ainz Ooal Gown / Momonga (humano comum no corpo de um lich supremo), Albedo (supervisora leal e apaixonada), Demiurge (estrategista demoníaco extremamente inteligente).",
     themes: "A moralidade sob o ponto de vista de um monstro, simulação de império, paranoia do poder.",

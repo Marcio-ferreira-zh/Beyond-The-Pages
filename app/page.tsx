@@ -56,18 +56,14 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#1a0c05] flex flex-col items-center justify-center p-6 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#2a1810] to-[#1a0c05]">
       <div className="w-full max-w-md text-center animate-in fade-in duration-700">
-        
-        {/* Glowing Logo */}
-        <div className="relative w-32 h-32 mx-auto mb-8 rounded-full overflow-hidden border-2 border-gold/30 shadow-[0_0_30px_rgba(197,160,89,0.35)] bg-[#2a1810] flex items-center justify-center group">
-          <div className="absolute inset-0 bg-gradient-to-tr from-gold/10 to-transparent group-hover:opacity-100 transition-opacity" />
+        <div className="relative mx-auto mb-6 flex h-36 w-36 items-center justify-center overflow-hidden rounded-3xl border border-gold/20 shadow-[0_0_28px_rgba(197,160,89,0.3)]">
           <Image
             alt="Beyond The Pages Logo"
-            width={128}
-            height={128}
-            className="object-contain p-4 transition-transform duration-500 group-hover:scale-105"
-            src="/app_icon.png"
+            width={144}
+            height={144}
+            className="object-cover scale-110 transition-transform duration-500 hover:scale-125"
+            src="/logo_app.png"
             onError={(e) => {
-              // If image fails, fallback to rendering the icon
               e.currentTarget.style.display = "none";
               const parent = e.currentTarget.parentElement;
               if (parent) {
@@ -83,15 +79,11 @@ export default function Home() {
         <h1 className="text-gold font-serif text-3.5xl mb-1 tracking-wider font-extrabold text-gold-glow">
           Beyond The Pages
         </h1>
-        <p className="text-white/40 text-xs mb-8 italic uppercase tracking-widest">
-          Aureum Codex
-        </p>
 
-        {/* Login Form Card */}
-        <div className="bg-[#2a1810]/50 p-8 rounded-xl border border-white/5 backdrop-blur-md shadow-2xl relative overflow-hidden">
+        <div className="bg-[#2a1810]/50 p-6 rounded-xl border border-white/5 backdrop-blur-md shadow-2xl relative overflow-hidden mt-6">
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-gold/50 to-transparent"></div>
           
-          <h2 className="text-white text-xl mb-6 font-serif-alegreya italic font-semibold tracking-wide">
+          <h2 className="text-white text-lg mb-5 font-serif-alegreya italic font-semibold tracking-wide">
             Retorne ao Manuscrito
           </h2>
 
@@ -102,8 +94,7 @@ export default function Home() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="flex flex-col gap-5">
-            {/* E-mail */}
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5 text-left">
               <label className="block text-gold-light italic mb-1 font-serif text-base tracking-wide">
                 E-MAIL OU USUÁRIO
@@ -117,13 +108,12 @@ export default function Home() {
                   placeholder="bibliotecario@alexandria.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#2a1810] border border-white/10 pl-10 pr-4 py-3.5 text-white rounded focus:border-gold outline-none transition-colors placeholder:text-white/20 text-sm"
+                  className="w-full bg-[#2a1810] border border-white/10 pl-10 pr-4 py-3 text-white rounded focus:border-gold outline-none transition-colors placeholder:text-white/20 text-sm"
                   required
                 />
               </div>
             </div>
 
-            {/* Password */}
             <div className="flex flex-col gap-1.5 text-left">
               <label className="block text-gold-light italic mb-1 font-serif text-base tracking-wide">
                 SENHA
@@ -137,31 +127,29 @@ export default function Home() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#2a1810] border border-white/10 pl-10 pr-4 py-3.5 text-white rounded focus:border-gold outline-none transition-colors placeholder:text-white/20 text-sm"
+                  className="w-full bg-[#2a1810] border border-white/10 pl-10 pr-4 py-3 text-white rounded focus:border-gold outline-none transition-colors placeholder:text-white/20 text-sm"
                   required
                 />
               </div>
             </div>
 
-            {/* Login button */}
             <button
               type="submit"
-              className="bg-gradient-to-r from-gold to-gold-light text-[#1a0c05] font-bold py-3.5 px-6 rounded shadow-lg hover:brightness-110 transition-all uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 w-full cursor-pointer mt-2"
+              className="bg-gradient-to-r from-gold to-gold-light text-[#1a0c05] font-bold py-3 px-6 rounded shadow-lg hover:brightness-110 transition-all uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95 w-full cursor-pointer mt-1"
             >
               Acessar Pergaminhos
               <BookOpen size={16} />
             </button>
           </form>
 
-          {/* Academic disclaimer banner */}
-          <div className="mt-6 flex items-start gap-2.5 p-3 bg-blue-500/10 border border-blue-500/20 rounded text-left">
+          <div className="mt-5 flex items-start gap-2.5 p-3 bg-blue-500/10 border border-blue-500/20 rounded text-left">
             <AlertCircle className="text-blue-400 shrink-0 mt-0.5" size={14} />
             <p className="text-[10px] text-blue-200/70 leading-normal">
               PROTÓTIPO ACADÊMICO: Não utilize senhas reais. Este ambiente é apenas para fins de demonstração e armazenamento local.
             </p>
           </div>
 
-          <p className="mt-8 text-white/30 text-[9px] tracking-widest uppercase">
+          <p className="mt-6 text-white/30 text-[9px] tracking-widest uppercase">
             © MMXXVI BEYOND THE PAGES MANUSCRIPTUM
           </p>
         </div>
