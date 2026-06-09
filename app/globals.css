@@ -97,3 +97,18 @@ body {
 .pulse-gold {
   animation: goldPulse 3s infinite;
 }
+
+@keyframes tabFadeSmooth {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-smooth-enter {
+  animation: tabFadeSmooth 260ms ease;
+}

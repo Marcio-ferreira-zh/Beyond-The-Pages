@@ -13,7 +13,7 @@ const alegreya = Alegreya({
 });
 
 export const metadata: Metadata = {
-  title: "Beyond The Pages | Quando a história sai do papel",
+  title: "Beyond The Pages",
   description: "Plataforma premium para organizar, registrar e consultar briefings de leitura, análises de personagens e recomendações literárias.",
 };
 
