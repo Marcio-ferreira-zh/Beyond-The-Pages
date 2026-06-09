@@ -28,6 +28,7 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,23 +58,18 @@ export default function Home() {
     <div className="min-h-screen bg-[#1a0c05] flex flex-col items-center justify-center p-6 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#2a1810] to-[#1a0c05]">
       <div className="w-full max-w-md text-center animate-in fade-in duration-700">
         <div className="relative mx-auto mb-6 flex h-36 w-36 items-center justify-center overflow-hidden rounded-3xl border border-gold/20 shadow-[0_0_28px_rgba(197,160,89,0.3)]">
-          <Image
-            alt="Beyond The Pages Logo"
-            width={144}
-            height={144}
-            className="object-cover scale-110 transition-transform duration-500 hover:scale-125"
-            src="/logo_app.png"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-              const parent = e.currentTarget.parentElement;
-              if (parent) {
-                const iconContainer = document.createElement("div");
-                iconContainer.className = "text-gold animate-pulse";
-                iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg>`;
-                parent.appendChild(iconContainer);
-              }
-            }}
-          />
+          {logoLoadFailed ? (
+            <BookOpen size={56} className="text-gold" />
+          ) : (
+            <Image
+              alt="Beyond The Pages Logo"
+              width={144}
+              height={144}
+              className="object-contain scale-105 transition-transform duration-500 hover:scale-110"
+              src="/logo_app.png"
+              onError={() => setLogoLoadFailed(true)}
+            />
+          )}
         </div>
 
         <h1 className="text-gold font-serif text-3.5xl mb-1 tracking-wider font-extrabold text-gold-glow">

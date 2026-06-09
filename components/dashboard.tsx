@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ArrowLeft,
   BookMarked,
@@ -83,6 +83,14 @@ const hashString = (value: string) => {
   return Math.abs(hash);
 };
 
+const escapeXml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+
 const createCoverDataUri = (title: string, subtitle: string, seed: string) => {
   const palettes = [
     ["#52280f", "#9e5f2f", "#e8be77"],
@@ -92,8 +100,8 @@ const createCoverDataUri = (title: string, subtitle: string, seed: string) => {
     ["#143024", "#2f6a4e", "#9fd6be"],
   ] as const;
   const palette = palettes[hashString(seed) % palettes.length];
-  const escapedTitle = title.replace(/&/g, "&amp;").slice(0, 22);
-  const escapedSubtitle = subtitle.replace(/&/g, "&amp;").slice(0, 26);
+  const escapedTitle = escapeXml(title).slice(0, 22);
+  const escapedSubtitle = escapeXml(subtitle).slice(0, 26);
 
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='480' height='300' viewBox='0 0 480 300'>
     <defs>
@@ -105,7 +113,7 @@ const createCoverDataUri = (title: string, subtitle: string, seed: string) => {
     </defs>
     <rect width='480' height='300' fill='url(#g)' />
     <rect x='18' y='18' width='444' height='264' fill='rgba(15,8,4,.34)' stroke='rgba(255,255,255,.18)' rx='16' />
-    <text x='42' y='120' fill='rgba(255,255,255,.95)' font-size='30' font-family='Georgia, serif' font-weight='700'>📚 ☕</text>
+    <text x='42' y='120' fill='rgba(255,255,255,.95)' font-size='24' font-family='Inter, sans-serif' font-weight='700'>LIVRO &amp; CAFÉ</text>
     <text x='42' y='170' fill='rgba(255,255,255,.95)' font-size='28' font-family='Georgia, serif'>${escapedTitle}</text>
     <text x='42' y='204' fill='rgba(255,255,255,.8)' font-size='18' font-family='Inter, sans-serif'>${escapedSubtitle}</text>
   </svg>`;
@@ -178,12 +186,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
   const [recAuthorName, setRecAuthorName] = useState("");
   const [recContent, setRecContent] = useState("");
   const [recRating, setRecRating] = useState(5);
-
-  useEffect(() => {
-    if (!selectedBriefing) return;
-    setSelectedBriefingNotes(selectedBriefing.personalNotes ?? "");
-    setSelectedBriefingStatus(normalizeStatus(selectedBriefing.status));
-  }, [selectedBriefing]);
 
   const filteredBriefings = useMemo(() => {
     const query = librarySearch.toLowerCase();
@@ -445,6 +447,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
     setSelectedBriefing(updatedSelected);
   };
 
+  const openBriefingProfile = (briefing: Briefing) => {
+    setSelectedBriefing(briefing);
+    setSelectedBriefingNotes(briefing.personalNotes ?? "");
+    setSelectedBriefingStatus(normalizeStatus(briefing.status));
+  };
+
   const renderStars = (rating: number, size = 14) => (
     <div className="flex items-center gap-0.5">
       {Array.from({ length: 5 }).map((_, index) => (
@@ -553,7 +561,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
             key={briefing.id}
             hoverEffect
             className="flex cursor-pointer flex-col justify-between"
-            onClick={() => setSelectedBriefing(briefing)}
+            onClick={() => openBriefingProfile(briefing)}
           >
             <div className="h-36 w-full overflow-hidden border-b border-white/5">
               <img
