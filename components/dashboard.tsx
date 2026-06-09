@@ -6,13 +6,10 @@ import {
   ArrowLeft,
   BookMarked,
   BookOpen,
-  ChevronRight,
-  Home,
   LogOut,
   MessageSquare,
   Pencil,
   Plus,
-  Quote,
   Search,
   Sparkles,
   Star,
@@ -72,53 +69,6 @@ const loadStoredCollection = <T,>(key: string, fallback: T[]) => {
 
   localStorage.setItem(key, JSON.stringify(fallback));
   return fallback;
-};
-
-const hashString = (value: string) => {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash);
-};
-
-const escapeXml = (value: string) =>
-  value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-
-const createCoverDataUri = (title: string, subtitle: string, seed: string) => {
-  const palettes = [
-    ["#52280f", "#9e5f2f", "#e8be77"],
-    ["#11243b", "#28456a", "#93b8dc"],
-    ["#2b163d", "#523172", "#b99ad9"],
-    ["#3f1a1f", "#7d2f3f", "#e8a3b1"],
-    ["#143024", "#2f6a4e", "#9fd6be"],
-  ] as const;
-  const palette = palettes[hashString(seed) % palettes.length];
-  const escapedTitle = escapeXml(title).slice(0, 22);
-  const escapedSubtitle = escapeXml(subtitle).slice(0, 26);
-
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='480' height='300' viewBox='0 0 480 300'>
-    <defs>
-      <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-        <stop offset='0%' stop-color='${palette[0]}' />
-        <stop offset='55%' stop-color='${palette[1]}' />
-        <stop offset='100%' stop-color='${palette[2]}' />
-      </linearGradient>
-    </defs>
-    <rect width='480' height='300' fill='url(#g)' />
-    <rect x='18' y='18' width='444' height='264' fill='rgba(15,8,4,.34)' stroke='rgba(255,255,255,.18)' rx='16' />
-    <text x='42' y='120' fill='rgba(255,255,255,.95)' font-size='24' font-family='Inter, sans-serif' font-weight='700'>LIVRO &amp; CAFÉ</text>
-    <text x='42' y='170' fill='rgba(255,255,255,.95)' font-size='28' font-family='Georgia, serif'>${escapedTitle}</text>
-    <text x='42' y='204' fill='rgba(255,255,255,.8)' font-size='18' font-family='Inter, sans-serif'>${escapedSubtitle}</text>
-  </svg>`;
-
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
 const createBriefingFromPergaminho = (work: PergaminhoWork): Briefing => {
@@ -229,13 +179,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
     [briefings, pergaminhos]
   );
 
-  const recommendationCovers = useMemo(() => {
-    const covers = new Map<string, string>();
-    recommendationOptions.forEach((work) => {
-      covers.set(work.title, createCoverDataUri(work.title, work.genre, work.id));
-    });
-    return covers;
-  }, [recommendationOptions]);
+  const currentlyReading = useMemo(
+    () =>
+      briefings
+        .filter((briefing) => normalizeStatus(briefing.status) === "Lendo")
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .slice(0, 4),
+    [briefings]
+  );
+
+  const recentRecommendations = useMemo(
+    () =>
+      [...recommendations]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 4),
+    [recommendations]
+  );
+
+  const latestPergaminhos = useMemo(() => pergaminhos.slice(0, 4), [pergaminhos]);
 
   const saveBriefings = (updatedBriefings: Briefing[]) => {
     setBriefings(updatedBriefings);
@@ -480,26 +441,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
   );
 
   const renderHome = () => (
-    <div className="flex flex-col gap-8">
-      <section className="gold-glass relative overflow-hidden rounded-2xl border border-gold/20 p-8 md:p-10">
-        <div className="absolute right-8 top-8 hidden h-40 w-40 rounded-full bg-gold/10 blur-3xl md:block" />
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-2xl">
-            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-gold/25 bg-[#2a1810]/70 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-gold-light">
-              <Home size={12} /> Aba Home
-            </span>
-            <h2 className="font-serif text-4xl font-bold italic text-gold-light md:text-5xl">Bem-vindo ao Beyond The Pages</h2>
-            <p className="mt-4 text-sm leading-relaxed text-white/65">
-              Organize leituras, publique recomendações e descubra novas histórias com uma navegação mais fluida.
-            </p>
+    <div className="flex flex-col gap-6">
+      <section className="gold-glass rounded-2xl border border-gold/20 p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="font-serif text-2xl font-bold italic text-gold-light">Seu painel de leitura</h2>
+            <p className="mt-1 text-sm text-white/60">Visão rápida da sua biblioteca, recomendações e pergaminhos novos.</p>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={() => navigateToTab("pergaminhos")}>
-              <BookMarked size={16} /> Explorar Pergaminhos
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => navigateToTab("pergaminhos")}>
+              <BookMarked size={14} /> Explorar Pergaminhos
             </Button>
-            <Button variant="secondary" onClick={() => navigateToTab("library")}>
-              <BookOpen size={16} /> Ir para Biblioteca
+            <Button size="sm" variant="secondary" onClick={() => navigateToTab("library")}>
+              <BookOpen size={14} /> Abrir Biblioteca
             </Button>
           </div>
         </div>
@@ -507,25 +461,102 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {[
-          { label: "Obras na biblioteca", value: briefings.length, icon: BookOpen },
-          { label: "Pergaminhos aleatórios", value: pergaminhos.length, icon: BookMarked },
-          { label: "Recomendações feitas", value: recommendations.length, icon: Sparkles },
+          { label: "Lendo agora", value: currentlyReading.length, icon: BookOpen },
+          { label: "Total na biblioteca", value: briefings.length, icon: BookMarked },
+          { label: "Recomendações publicadas", value: recommendations.length, icon: Sparkles },
         ].map((stat) => {
           const Icon = stat.icon;
-
           return (
             <Card key={stat.label}>
               <CardContent className="flex items-center justify-between p-5">
                 <div>
-                  <p className="text-[10px] uppercase tracking-widest text-white/35">{stat.label}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-white/40">{stat.label}</p>
                   <strong className="font-serif text-3xl text-gold-light">{stat.value}</strong>
                 </div>
-                <Icon className="text-gold/70" size={28} />
+                <Icon className="text-gold/70" size={24} />
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <Card className="xl:col-span-2">
+          <CardHeader className="border-b border-white/5">
+            <CardTitle className="text-xl italic text-gold-light">O que está lendo</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {currentlyReading.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {currentlyReading.map((briefing) => (
+                  <button
+                    key={briefing.id}
+                    type="button"
+                    onClick={() => {
+                      navigateToTab("library");
+                      openBriefingProfile(briefing);
+                    }}
+                    className="rounded-lg border border-white/10 bg-[#2a1810]/35 p-3 text-left transition-colors hover:border-gold/35"
+                  >
+                    <p className="text-[10px] uppercase tracking-widest text-gold/70">
+                      {briefing.materialType} • {briefing.genre}
+                    </p>
+                    <p className="mt-1 line-clamp-1 font-serif text-lg text-gold-light">{briefing.title}</p>
+                    <p className="text-xs italic text-white/60">por {briefing.author}</p>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-white/55">Nenhuma leitura em andamento. Adicione uma obra e marque como “Lendo”.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="border-b border-white/5">
+            <CardTitle className="text-xl italic text-gold-light">Novos pergaminhos</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="flex flex-col gap-3">
+              {latestPergaminhos.map((work) => (
+                <button
+                  key={work.id}
+                  type="button"
+                  onClick={() => {
+                    navigateToTab("pergaminhos");
+                    setSelectedPergaminho(work);
+                  }}
+                  className="rounded-lg border border-white/10 bg-[#2a1810]/35 p-3 text-left transition-colors hover:border-gold/35"
+                >
+                  <p className="line-clamp-1 font-serif text-base text-gold-light">{work.title}</p>
+                  <p className="text-[11px] text-white/60">{work.author}</p>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <Card>
+        <CardHeader className="border-b border-white/5">
+          <CardTitle className="text-xl italic text-gold-light">Recomendações recentes</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {recentRecommendations.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {recentRecommendations.map((recommendation) => (
+                <div key={recommendation.id} className="rounded-lg border border-white/10 bg-[#2a1810]/35 p-4">
+                  <p className="line-clamp-1 font-serif text-base text-gold-light">{recommendation.briefingTitle}</p>
+                  <p className="text-[11px] text-white/55">por {recommendation.authorName}</p>
+                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-white/70">{recommendation.content}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-white/55">Você ainda não publicou recomendações.</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -563,34 +594,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
             className="flex cursor-pointer flex-col justify-between"
             onClick={() => openBriefingProfile(briefing)}
           >
-            <div className="h-36 w-full overflow-hidden border-b border-white/5">
-              <img
-                src={createCoverDataUri(briefing.title, briefing.genre, briefing.id)}
-                alt={`Capa da obra ${briefing.title}`}
-                className="h-full w-full object-cover"
-              />
-            </div>
             <CardHeader>
-              <CardDescription>{briefing.materialType}</CardDescription>
-              <CardTitle className="line-clamp-1">{briefing.title}</CardTitle>
+              <CardDescription>{briefing.materialType} • {briefing.genre}</CardDescription>
+              <CardTitle className="line-clamp-2">{briefing.title}</CardTitle>
               <span className="text-xs italic text-white/60">por {briefing.author}</span>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col gap-4">
               <p className="line-clamp-3 text-xs leading-relaxed text-white/70">{briefing.summary}</p>
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/5 pt-3">
-                <span className="text-[11px] text-gold-light">{briefing.genre}</span>
+              <div className="mt-auto flex items-center justify-between gap-2">
                 <span
-                  className={`rounded border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${getStatusBadgeClasses(
-                    normalizeStatus(briefing.status)
-                  )}`}
+                  className={`rounded border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${getStatusBadgeClasses(normalizeStatus(briefing.status))}`}
                 >
                   {normalizeStatus(briefing.status)}
                 </span>
+                <span className="text-[11px] text-gold-light">{briefing.rating.toFixed(1)}</span>
               </div>
             </CardContent>
-            <CardFooter className="py-3">
-              {renderStars(briefing.rating)}
-              <span className="text-[10px] text-white/35">Abrir perfil</span>
+            <CardFooter className="!grid grid-cols-2 !items-stretch !justify-normal gap-2 border-t border-white/5 py-3">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openBriefingProfile(briefing);
+                }}
+              >
+                <BookOpen size={12} /> Biblioteca
+              </Button>
+              <Button
+                size="sm"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openNewRecommendationModal(briefing.id);
+                }}
+              >
+                <MessageSquare size={12} /> Recomendar
+              </Button>
             </CardFooter>
           </Card>
         ))}
@@ -607,13 +646,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
           </Button>
 
           <Card>
-            <div className="h-48 w-full overflow-hidden border-b border-white/5">
-              <img
-                src={createCoverDataUri(selectedPergaminho.title, selectedPergaminho.genre, selectedPergaminho.id)}
-                alt={`Capa da obra ${selectedPergaminho.title}`}
-                className="h-full w-full object-cover"
-              />
-            </div>
             <CardHeader className="border-b border-white/5">
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                 <div>
@@ -624,7 +656,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
                   <p className="text-sm italic text-white/60">por {selectedPergaminho.author}</p>
                 </div>
                 <div className="rounded border border-gold/20 bg-[#1a0c05]/70 p-3 text-right">
-                  <p className="text-[10px] uppercase tracking-widest text-white/35">Classificação fictícia</p>
+                  <p className="text-[10px] uppercase tracking-widest text-white/35">Classificação</p>
                   <strong className="font-serif text-sm italic text-gold-light">{selectedPergaminho.classification}</strong>
                   <div className="mt-2 flex justify-end">{renderStars(selectedPergaminho.rating, 16)}</div>
                 </div>
@@ -642,7 +674,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
               </div>
               <div>
                 <h3 className="mb-4 flex items-center gap-2 font-serif text-lg font-bold italic text-gold-light">
-                  <MessageSquare size={18} /> Recomendações fictícias da obra
+                  <MessageSquare size={18} /> Recomendações da obra
                 </h3>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   {selectedPergaminho.recommendations.map((recommendation) => (
@@ -694,13 +726,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
               className="flex cursor-pointer flex-col justify-between"
               onClick={() => setSelectedPergaminho(work)}
             >
-              <div className="h-36 w-full overflow-hidden border-b border-white/5">
-                <img
-                  src={createCoverDataUri(work.title, work.genre, work.id)}
-                  alt={`Capa da obra ${work.title}`}
-                  className="h-full w-full object-cover"
-                />
-              </div>
               <CardHeader>
                 <CardDescription>
                   {work.materialType} • {work.genre}
@@ -717,9 +742,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
               <CardFooter className="flex-col items-stretch gap-2 border-t border-white/5 py-3">
                 <div className="flex items-center justify-between">
                   {renderStars(work.rating)}
-                  <span className="flex items-center gap-1 text-[10px] text-white/30">
-                    Abrir <ChevronRight size={12} />
-                  </span>
+                  <span className="text-[10px] text-white/35">{work.rating.toFixed(1)}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
@@ -768,16 +791,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {recommendations.map((recommendation) => (
             <Card key={recommendation.id} className="flex flex-col justify-between">
-              <div className="h-32 w-full overflow-hidden border-b border-white/5">
-                <img
-                  src={
-                    recommendationCovers.get(recommendation.briefingTitle) ??
-                    createCoverDataUri(recommendation.briefingTitle, "Recomendação", recommendation.id)
-                  }
-                  alt={`Capa da obra ${recommendation.briefingTitle}`}
-                  className="h-full w-full object-cover"
-                />
-              </div>
               <CardHeader className="border-b border-white/5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -791,10 +804,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
                 </div>
               </CardHeader>
               <CardContent className="flex-1 pt-5">
-                <div className="relative pl-7">
-                  <Quote className="absolute left-0 top-0 rotate-180 text-gold-dark/40" size={18} />
-                  <p className="font-serif text-xs italic leading-relaxed text-white/85">{recommendation.content}</p>
-                </div>
+                <p className="font-serif text-xs italic leading-relaxed text-white/85">{recommendation.content}</p>
               </CardContent>
               <CardFooter className="py-3">
                 <span className="text-[10px] text-white/30">
@@ -881,13 +891,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
       <Modal isOpen={selectedBriefing !== null} onClose={() => setSelectedBriefing(null)} title="Perfil da Obra" maxWidth="lg">
         {selectedBriefing && (
           <div className="flex flex-col gap-5">
-            <div className="h-40 w-full overflow-hidden rounded-lg border border-white/10">
-              <img
-                src={createCoverDataUri(selectedBriefing.title, selectedBriefing.genre, selectedBriefing.id)}
-                alt={`Capa da obra ${selectedBriefing.title}`}
-                className="h-full w-full object-cover"
-              />
-            </div>
             <div className="border-b border-white/5 pb-4">
               <span className="text-[10px] font-bold uppercase tracking-widest text-gold/60">{selectedBriefing.materialType}</span>
               <h2 className="font-serif text-2xl font-bold italic text-gold-light">{selectedBriefing.title}</h2>
@@ -1026,7 +1029,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout, userEmail }) => 
           </div>
 
           <Input
-            label="Classificação fictícia"
+            label="Classificação"
             value={newPergClassification}
             onChange={(event) => setNewPergClassification(event.target.value)}
             placeholder="Ex: Classe A — fantasia estratégica"
