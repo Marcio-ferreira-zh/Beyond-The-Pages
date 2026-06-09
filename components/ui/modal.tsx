@@ -7,6 +7,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl";
 }
 
@@ -15,6 +16,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
+  footer,
   maxWidth = "md",
 }) => {
   // Prevent body scrolling when modal is open
@@ -67,6 +69,13 @@ export const Modal: React.FC<ModalProps> = ({
           <div className="p-6 overflow-y-auto custom-scroll flex-1">
             {children}
           </div>
+
+          {/* Footer */}
+          {footer && (
+            <div className="p-4 border-t border-white/5 bg-black/10">
+              {footer}
+            </div>
+          )}
         </Card>
       </div>
     </div>
